@@ -26,6 +26,7 @@ use crate::solc::Solc;
 
 use cita_types::{clean_0x, U256};
 use ethabi::Contract;
+use ethabi::Token;
 use json;
 use serde::{Deserialize, Serialize};
 
@@ -102,6 +103,7 @@ impl<'a> GenesisCreator<'a> {
         self.init_normal_contracts();
         // 3. Init permission contracts
         self.init_permission_contracts();
+
         // 4. Save super admin
         let super_admin = self.contract_args.contracts.admin.admin.clone();
         self.set_account_value(
@@ -122,12 +124,47 @@ impl<'a> GenesisCreator<'a> {
 
             self.write_docs(contract_name, data);
             if let Some(constructor) = self.load_contract(contract_name.to_string()).constructor() {
-                let params = normal_params
-                    .get(*contract_name)
-                    .map_or(Vec::new(), |p| (*p).clone());
+                let params = normal_params.get(*contract_name).map_or(Vec::new(), |p| (*p).clone());
+                println!(
+                    "Contract name {:?} address {:?} params is {:?}",
+                    contract_name, address, params
+                );
                 let bytes = constructor.encode_input(input_data, &params).unwrap();
-                if let Some(account) = Miner::mine(bytes) {
-                    self.accounts.insert((*address).clone(), account);
+
+
+                if *contract_name == "Admin" {
+                    let mut param = BTreeMap::new();
+                    let addr = match params.get(0) {
+                        Some(Token::Address(addr)) => addr,
+                        _ => unimplemented!(),
+                    };
+                    param.insert("admin".to_string(), addr.hex());
+                    let admin_contract = Account {
+                        nonce: U256::from(1),
+                        code: "".to_string(),
+                        storage: param,
+                        value: U256::from(0),
+                    };
+                    self.accounts.insert((*address).clone(), admin_contract);
+                } else if *contract_name == "PriceManager" {
+                    let mut param = BTreeMap::new();
+                    let quota_price = match params.get(0) {
+                        Some(Token::Uint(price)) => price,
+                        _ => unimplemented!(),
+                    };
+                    param.insert("quota_price".to_string(), quota_price.to_string());
+                    let price_contract = Account {
+                        nonce: U256::from(1),
+                        code: "".to_string(),
+                        storage: param,
+                        value: U256::from(0),
+                    };
+                    self.accounts.insert((*address).clone(), price_contract);
+                }
+                else {
+                    if let Some(account) = Miner::mine(bytes) {
+                        self.accounts.insert((*address).clone(), account);
+                    }
                 }
             } else if let Some(account) = Miner::mine(input_data) {
                 self.accounts.insert((*address).clone(), account);

@@ -16,6 +16,7 @@ use crate::libexecutor::block::Block;
 use crate::libexecutor::executor::{CitaDB, CitaTrieDB};
 use crate::types::db_indexes;
 use crate::types::db_indexes::DBIndex;
+use crate::types::reserved_addresses;
 use cita_database::{DataCategory, Database};
 use cita_types::traits::ConvertType;
 use cita_types::{clean_0x, Address, H256, U256};
@@ -31,6 +32,10 @@ use std::io::BufReader;
 use std::io::Read;
 use std::path::Path;
 use std::sync::Arc;
+
+use crate::rs_contracts::contracts::admin::Admin;
+use crate::rs_contracts::contracts::price::Price;
+use crate::rs_contracts::factory::ContractsFactory;
 
 #[cfg(feature = "privatetx")]
 use zktx::set_param_path;
@@ -102,7 +107,11 @@ impl Genesis {
         }
     }
 
-    pub fn lazy_execute(&mut self, state_db: Arc<CitaTrieDB>) -> Result<(), String> {
+    pub fn lazy_execute(
+        &mut self,
+        state_db: Arc<CitaTrieDB>,
+        contracts_factory: &mut ContractsFactory,
+    ) -> Result<(), String> {
         let mut state = CitaState::from_existing(
             Arc::<CitaTrieDB>::clone(&state_db),
             *self.block.state_root(),
@@ -118,40 +127,66 @@ impl Genesis {
         trace!("**** begin **** \n");
         for (address, contract) in self.spec.alloc.clone() {
             let address = Address::from_unaligned(address.as_str()).unwrap();
-            state.new_contract(&address, U256::from(0), U256::from(0), vec![]);
-            {
-                state
-                    .set_code(&address, clean_0x(&contract.code).from_hex().unwrap())
-                    .expect("init code fail");
-                if let Some(value) = contract.value {
-                    state
-                        .add_balance(&address, value)
-                        .expect("init balance fail");
+            if address == Address::from(reserved_addresses::ADMIN) {
+                // admin contract
+                for (key, value) in contract.storage.clone() {
+                    trace!("===> admin contract key {:?}", key);
+                    if *key == "admin".to_string() {
+                        let admin = Address::from_unaligned(value.as_str()).unwrap();
+                        trace!("===> admin contract value {:?}", admin);
+                        let contract_admin = Admin::init(admin);
+                        let str = serde_json::to_string(&contract_admin).unwrap();
+                        contracts_factory.register(address, str);
+                    }
                 }
-            }
-            for (key, values) in contract.storage.clone() {
-                state
-                    .set_storage(
-                        &address,
-                        H256::from_unaligned(key.as_ref()).unwrap(),
-                        H256::from_unaligned(values.as_ref()).unwrap(),
-                    )
-                    .expect("init code set_storage fail");
+            } else if address == Address::from(reserved_addresses::PRICE_MANAGEMENT) {
+                // price contract
+                for (key, value) in contract.storage.clone() {
+                    trace!("===> price contract key {:?}", key);
+                    if *key == "quota_price".to_string() {
+                        let price = U256::from_dec_str(&value).unwrap();
+                        trace!("===> price contract value {:?}", price);
+                        let contract_price = Price::new(price);
+                        let str = serde_json::to_string(&contract_price).unwrap();
+                        contracts_factory.register(address, str);
+                    }
+                }
+            } else {
+                state.new_contract(&address, U256::from(0), U256::from(0), vec![]);
+                {
+                    state
+                        .set_code(&address, clean_0x(&contract.code).from_hex().unwrap())
+                        .expect("init code fail");
+                    if let Some(value) = contract.value {
+                        state
+                            .add_balance(&address, value)
+                            .expect("init balance fail");
+                    }
+                }
+                for (key, values) in contract.storage.clone() {
+                    state
+                        .set_storage(
+                            &address,
+                            H256::from_unaligned(key.as_ref()).unwrap(),
+                            H256::from_unaligned(values.as_ref()).unwrap(),
+                        )
+                        .expect("init code set_storage fail");
+                }
             }
         }
         state.commit().expect("state commit error");
         //query is store in chain
-        for (address, contract) in &self.spec.alloc {
-            let address = Address::from_unaligned(address.as_str()).unwrap();
-            for (key, values) in &contract.storage {
-                let result =
-                    state.get_storage(&address, &H256::from_unaligned(key.as_ref()).unwrap());
-                assert_eq!(
-                    H256::from_unaligned(values.as_ref()).unwrap(),
-                    result.expect("storage error")
-                );
-            }
-        }
+        // for (address, contract) in &self.spec.alloc {
+        //     let address = Address::from_unaligned(address.as_str()).unwrap();
+        //     for (key, values) in &contract.storage {
+        //         let result =
+        //             state.get_storage(&address, &H256::from_unaligned(key.as_ref()).unwrap());
+        //         assert_eq!(
+        //             H256::from_unaligned(values.as_ref()).unwrap(),
+        //             result.expect("storage error")
+        //         );
+        //     }
+        // }
 
         trace!("**** end **** \n");
         let root = state.root;

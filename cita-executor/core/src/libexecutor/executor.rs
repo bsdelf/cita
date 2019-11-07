@@ -35,13 +35,17 @@ use std::convert::Into;
 use std::sync::Arc;
 use util::RwLock;
 
+use crate::rs_contracts::factory::ContractsFactory;
+use crate::rs_contracts::storage::db_contracts::ContractsDB;
+
 pub type CitaTrieDB = TrieDB<RocksDB>;
 pub type CitaDB = RocksDB;
 
 pub struct Executor {
     pub current_header: RwLock<Header>,
     pub state_db: Arc<CitaTrieDB>,
-    pub db: Arc<dyn Database>,
+    pub db: Arc<Database>,
+    pub contracts_db: Arc<ContractsDB>,
     pub sys_config: GlobalSysConfig,
 
     pub fsm_req_receiver: Receiver<OpenBlock>,
@@ -67,10 +71,14 @@ impl Executor {
 
         // TODO: Can remove NUM_COLUMNS(useless)
         let config = Config::with_category_num(NUM_COLUMNS);
-        let nosql_path = data_path + "/statedb";
+        let nosql_path = data_path.clone() + "/statedb";
         let rocks_db = RocksDB::open(&nosql_path, &config).unwrap();
         let db = Arc::new(rocks_db);
         let state_db = Arc::new(TrieDB::new(db.clone()));
+
+        let contracts_db_path = data_path + "/contractsdb";
+        let contracts_db = Arc::new(ContractsDB::new(&contracts_db_path).unwrap());
+        let mut contracts_factory = ContractsFactory::new(contracts_db.clone());
 
         let current_header = match get_current_header(db.clone()) {
             Some(header) => header,
@@ -78,7 +86,7 @@ impl Executor {
                 warn!("Not found exist block within database. Loading genesis block...");
                 genesis
                     // FIXME
-                    .lazy_execute(state_db.clone())
+                    .lazy_execute(state_db.clone(), &mut contracts_factory)
                     .expect("failed to load genesis");
                 genesis.block.header().clone()
             }
@@ -87,6 +95,7 @@ impl Executor {
             current_header: RwLock::new(current_header),
             state_db,
             db,
+            contracts_db,
             sys_config: GlobalSysConfig::default(),
             fsm_req_receiver,
             fsm_resp_sender,
@@ -377,6 +386,7 @@ impl Executor {
             &self.sys_config.block_sys_config,
             open_block,
             self.state_db.clone(),
+            self.contracts_db.clone(),
             current_state_root,
             last_hashes.into(),
             self.eth_compatibility,

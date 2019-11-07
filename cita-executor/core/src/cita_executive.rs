@@ -42,6 +42,11 @@ use crate::types::log::Log;
 use crate::types::transaction::{Action, SignedTransaction};
 use ethbloom::{Bloom, Input as BloomInput};
 
+// use rs_contracts::factory::ContractsFactory;
+// use rs_contracts::storage::db_contracts::ContractsDB;
+use crate::rs_contracts::factory::ContractsFactory;
+use crate::rs_contracts::storage::db_contracts::ContractsDB;
+
 ///amend the abi data
 const AMEND_ABI: u32 = 1;
 ///amend the account code
@@ -60,6 +65,7 @@ const MAX_CREATE_CODE_SIZE: u64 = std::u64::MAX;
 pub struct CitaExecutive<'a, B> {
     block_provider: Arc<dyn BlockDataProvider>,
     state_provider: Arc<RefCell<State<B>>>,
+    contracts_db: Arc<ContractsDB>,
     context: &'a Context,
     economical_model: EconomicalModel,
 }
@@ -68,12 +74,14 @@ impl<'a, B: DB + 'static> CitaExecutive<'a, B> {
     pub fn new(
         block_provider: Arc<dyn BlockDataProvider>,
         state: Arc<RefCell<State<B>>>,
+        contracts_db: Arc<ContractsDB>,
         context: &'a Context,
         economical_model: EconomicalModel,
     ) -> Self {
         Self {
             block_provider,
             state_provider: state,
+            contracts_db,
             context,
             economical_model,
         }
@@ -168,6 +176,7 @@ impl<'a, B: DB + 'static> CitaExecutive<'a, B> {
                     self.block_provider.clone(),
                     self.state_provider.clone(),
                     store.clone(),
+                    self.contracts_db.clone(),
                     &vm_exec_params.into(),
                     CreateKind::FromAddressAndNonce,
                 )
@@ -231,6 +240,7 @@ impl<'a, B: DB + 'static> CitaExecutive<'a, B> {
                     self.block_provider.clone(),
                     self.state_provider.clone(),
                     store.clone(),
+                    self.contracts_db.clone(),
                     &vm_exec_params.into(),
                 )
             }
@@ -278,12 +288,13 @@ impl<'a, B: DB + 'static> CitaExecutive<'a, B> {
                     .kill_garbage(&store.borrow().inused.clone());
                 finalize_result.quota_used = gas_limit - U256::from(gas_left);
                 finalize_result.quota_left = U256::from(gas_left);
-                finalize_result.logs = transform_logs(logs);
+                finalize_result.logs = transform_logs(logs.clone());
                 finalize_result.logs_bloom = logs_to_bloom(&finalize_result.logs);
 
                 trace!(
-                    "Get data after executed the transaction [Normal]: {:?}",
-                    output
+                    "Get data after executed the transaction [Normal]: output {:?}, logs {:?}",
+                    output,
+                    logs
                 );
                 finalize_result.output = output;
             }
@@ -558,6 +569,7 @@ pub fn create<B: DB + 'static>(
     block_provider: Arc<dyn BlockDataProvider>,
     state_provider: Arc<RefCell<State<B>>>,
     store: Arc<RefCell<VMSubState>>,
+    contracts_db: Arc<ContractsDB>,
     request: &InterpreterParams,
     create_kind: CreateKind,
 ) -> Result<evm::InterpreterResult, VMError> {
@@ -565,6 +577,11 @@ pub fn create<B: DB + 'static>(
     let address = match create_kind {
         CreateKind::FromAddressAndNonce => {
             // Generate new address created from address, nonce
+            trace!(
+                "Create address from addess {:?} and nonce {:?}",
+                &request.sender,
+                &request.nonce
+            );
             create_address_from_address_and_nonce(&request.sender, &request.nonce)
         }
         CreateKind::FromSaltAndCodeHash => {
@@ -609,6 +626,7 @@ pub fn create<B: DB + 'static>(
         block_provider.clone(),
         state_provider.clone(),
         store.clone(),
+        contracts_db.clone(),
         &reqchan,
     );
     match r {
@@ -659,6 +677,7 @@ pub fn call<B: DB + 'static>(
     block_provider: Arc<dyn BlockDataProvider>,
     state_provider: Arc<RefCell<State<B>>>,
     store: Arc<RefCell<VMSubState>>,
+    contracts_db: Arc<ContractsDB>,
     request: &InterpreterParams,
 ) -> Result<evm::InterpreterResult, VMError> {
     // Here not need check twice,becauce prepay is subed ,but need think call_static
@@ -669,12 +688,14 @@ pub fn call<B: DB + 'static>(
     state_provider.borrow_mut().checkpoint();
     let store_son = Arc::new(RefCell::new(store.borrow_mut().clone()));
     let native_factory = NativeFactory::default();
+    let rs_contracts_factory = ContractsFactory::new(contracts_db.clone());
     // Check and call Native Contract.
     if let Some(mut native_contract) = native_factory.new_contract(request.contract.code_address) {
         let mut vm_data_provider = DataProvider::new(
             block_provider.clone(),
             state_provider.clone(),
             store.clone(),
+            contracts_db.clone(),
         );
         let context = store.borrow().evm_context.clone();
         match native_contract.exec(
@@ -693,11 +714,28 @@ pub fn call<B: DB + 'static>(
                 Err(e.into())
             }
         }
+    } else if rs_contracts_factory.is_rs_contract(&request.contract.code_address) {
+        trace!("===> enter rust contracts, address {:?}", request.contract.code_address);
+        let context = store.borrow().evm_context.clone();
+        // rust system contracts
+        match rs_contracts_factory.works(&request.to_owned(), &Context::from(context)) {
+            Ok(ret) => {
+                state_provider.borrow_mut().discard_checkpoint();
+                trace!("Contracts factory execute request {:?} successfully", request);
+                Ok(ret)
+            }
+            Err(e) => {
+                state_provider.borrow_mut().revert_checkpoint();
+                trace!("Contracts factory execute request {:?} failed", request);
+                Err(e.into())
+            }
+        }
     } else {
         let r = call_pure(
             block_provider.clone(),
             state_provider.clone(),
             store_son.clone(),
+            contracts_db.clone(),
             request,
         );
         debug!("call result={:?}", r);
