@@ -27,7 +27,7 @@ use cita_types::{Address, H160, H256};
 
 const ALLACCOUNTS: &[u8] = &*b"queryAllAccounts()";
 const PERMISSIONS: &[u8] = &*b"queryPermissions(address)";
-const RESOURCES: &[u8] = &*b"queryResource()";
+const RESOURCES: &[u8] = &*b"queryResource(address)";
 #[cfg(test)]
 const DEFAULT_SUPER_ADEMIN: &str = "4b5ae4567ad5d9fb92bc9afd6a657e6fa13a2523";
 
@@ -96,6 +96,8 @@ impl<'a> PermissionManagement<'a> {
         }
 
         account_permissions
+
+        // 修改为直接读 db
     }
 
     /// Account array
@@ -119,6 +121,7 @@ impl<'a> PermissionManagement<'a> {
     pub fn get_super_admin_account(&self, block_tag: BlockTag) -> Option<Address> {
         self.all_accounts(block_tag)
             .and_then(|accounts| accounts.first().cloned())
+        // 修改成直接读 db
     }
 
     /// Permission array
@@ -152,9 +155,12 @@ impl<'a> PermissionManagement<'a> {
     }
 
     /// Resources array
-    pub fn resources(&self, address: &Address, block_tag: BlockTag) -> Option<Vec<Resource>> {
+    pub fn resources(&self, permission: &Address, block_tag: BlockTag) -> Option<Vec<Resource>> {
+        let mut tx_data = RESOURCES_HASH.to_vec();
+        tx_data.extend(H256::from(permission).to_vec());
+        debug!("tx_data in resources: {:?}", tx_data);
         self.executor
-            .call_method(address, &*RESOURCES_HASH.as_slice(), None, block_tag)
+            .call_method(&*CONTRACT_ADDRESS, &tx_data.as_slice(), None, block_tag)
             .ok()
             .and_then(|output| decode_tools::to_resource_vec(&output))
     }
