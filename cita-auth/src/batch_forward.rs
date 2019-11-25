@@ -33,12 +33,7 @@ pub struct BatchForward {
 }
 
 impl BatchForward {
-    pub fn new(
-        batch_size: usize,
-        timeout: u64,
-        rx_request: Receiver<Request>,
-        tx_pub: Sender<(String, Vec<u8>)>,
-    ) -> Self {
+    pub fn new(batch_size: usize, timeout: u64, rx_request: Receiver<Request>, tx_pub: Sender<(String, Vec<u8>)>) -> Self {
         BatchForward {
             batch_size,
             timeout,
@@ -60,9 +55,7 @@ impl BatchForward {
             } else {
                 thread::sleep(Duration::new(0, self.check_duration * 1_000_000));
                 let now = AsMillis::as_millis(&unix_now());
-                if now.saturating_sub(self.last_timestamp) > self.timeout
-                    && !self.request_buffer.is_empty()
-                {
+                if now.saturating_sub(self.last_timestamp) > self.timeout && !self.request_buffer.is_empty() {
                     self.batch_forward();
                 }
             }
@@ -84,10 +77,7 @@ impl BatchForward {
 
         let msg: Message = request.into();
         self.tx_pub
-            .send((
-                routing_key!(Auth >> Request).into(),
-                msg.try_into().unwrap(),
-            ))
+            .send((routing_key!(Auth >> Request).into(), msg.try_into().unwrap()))
             .unwrap();
 
         self.last_timestamp = AsMillis::as_millis(&unix_now());

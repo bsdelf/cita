@@ -298,10 +298,7 @@ pub struct ContractsInfo {
 }
 
 impl ContractsInfo {
-    pub fn get_contract_info(
-        &self,
-        normal_contracts: &NormalContracts,
-    ) -> (Vec<String>, Vec<String>) {
+    pub fn get_contract_info(&self, normal_contracts: &NormalContracts) -> (Vec<String>, Vec<String>) {
         let mut conts = Vec::new();
         let mut funcs = Vec::new();
         let reference = normal_contracts.list();
@@ -565,10 +562,7 @@ mod tests {
             contracts.normal_contracts.auto_exec.address,
             String::from("0xffffffffffffffffffffffffffffffffff020013")
         );
-        assert_eq!(
-            contracts.normal_contracts.auto_exec.file,
-            String::from("system/AutoExec.sol")
-        );
+        assert_eq!(contracts.normal_contracts.auto_exec.file, String::from("system/AutoExec.sol"));
 
         assert_eq!(
             contracts.permission_contracts.file,
@@ -580,11 +574,7 @@ mod tests {
         );
 
         assert_eq!(
-            contracts
-                .permission_contracts
-                .contracts
-                .new_permission
-                .address,
+            contracts.permission_contracts.contracts.new_permission.address,
             String::from("0xffffffffffffffffffffffffffffffffff021010")
         );
     }

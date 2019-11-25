@@ -26,21 +26,22 @@ use crypto::md5::Md5;
 use rlp::encode;
 use rustc_hex::FromHex;
 use serde_json;
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::Read;
 use std::path::Path;
 use std::sync::Arc;
-use std::cell::RefCell;
 
 use crate::rs_contracts::contracts::admin::Admin;
+use crate::rs_contracts::contracts::emergency_intervention;
 use crate::rs_contracts::contracts::perm::Permission;
 use crate::rs_contracts::contracts::price::Price;
 use crate::rs_contracts::factory::ContractsFactory;
 use crate::rs_contracts::storage::db_contracts::ContractsDB;
-use tiny_keccak::keccak256;
 use std::collections::BTreeMap;
+use tiny_keccak::keccak256;
 
 #[cfg(feature = "privatetx")]
 use zktx::set_param_path;
@@ -112,16 +113,9 @@ impl Genesis {
         }
     }
 
-    pub fn lazy_execute(
-        &mut self,
-        state_db: Arc<CitaTrieDB>,
-        contracts_db: Arc<ContractsDB>,
-    ) -> Result<(), String> {
-
-        let state = CitaState::from_existing(
-            Arc::<CitaTrieDB>::clone(&state_db),
-            *self.block.state_root(),
-        ).expect("Can not get state from db!");
+    pub fn lazy_execute(&mut self, state_db: Arc<CitaTrieDB>, contracts_db: Arc<ContractsDB>) -> Result<(), String> {
+        let state = CitaState::from_existing(Arc::<CitaTrieDB>::clone(&state_db), *self.block.state_root())
+            .expect("Can not get state from db!");
 
         let state = Arc::new(RefCell::new(state));
         let mut contracts_factory = ContractsFactory::new(state.clone(), contracts_db.clone());
@@ -179,6 +173,10 @@ impl Genesis {
                         contracts_factory.register(address, str);
                     }
                 }
+            } else if address == Address::from(reserved_addresses::EMERGENCY_INTERVENTION) {
+                let contract = emergency_intervention::EmergencyIntervention::default();
+                let str = serde_json::to_string(&contract).unwrap();
+                contracts_factory.register(address, str);
             } else if is_permssion_contract(address) {
                 let mut perm_name = String::default();
                 let mut conts = Vec::new();
@@ -192,7 +190,9 @@ impl Genesis {
                         let addr = Address::from_unaligned(value.as_str()).unwrap();
                         conts.push(addr);
                         let mut hash_key = Vec::new();
-                        if addr == Address::from(reserved_addresses::PERMISSION_SEND_TX) || addr == Address::from(reserved_addresses::PERMISSION_CREATE_CONTRACT) {
+                        if addr == Address::from(reserved_addresses::PERMISSION_SEND_TX)
+                            || addr == Address::from(reserved_addresses::PERMISSION_CREATE_CONTRACT)
+                        {
                             hash_key = [0; 4].to_vec();
                         } else {
                             hash_key = keccak256(key.as_bytes()).to_vec()[0..4].to_vec();
@@ -204,19 +204,18 @@ impl Genesis {
                 let permission = Permission::new(perm_name, conts, funcs);
                 let str = serde_json::to_string(&permission).unwrap();
                 permission_contracts.insert(address, str);
-                // contracts_factory.register(address, str);
+            // contracts_factory.register(address, str);
             } else {
-                state.borrow_mut().new_contract(&address, U256::from(0), U256::from(0), vec![]);
+                state
+                    .borrow_mut()
+                    .new_contract(&address, U256::from(0), U256::from(0), vec![]);
                 {
                     state
                         .borrow_mut()
                         .set_code(&address, clean_0x(&contract.code).from_hex().unwrap())
                         .expect("init code fail");
                     if let Some(value) = contract.value {
-                        state
-                            .borrow_mut()
-                            .add_balance(&address, value)
-                            .expect("init balance fail");
+                        state.borrow_mut().add_balance(&address, value).expect("init balance fail");
                     }
                 }
                 for (key, values) in contract.storage.clone() {
@@ -264,22 +263,14 @@ impl Genesis {
         let hash_key = db_indexes::Hash2Header(hash).get_index();
 
         // Need to get header in init function.
-        db.insert(
-            Some(DataCategory::Headers),
-            hash_key.to_vec(),
-            self.block.header().rlp(),
-        )
-        .expect("Insert block header error.");
+        db.insert(Some(DataCategory::Headers), hash_key.to_vec(), self.block.header().rlp())
+            .expect("Insert block header error.");
 
         // Insert [current_hash, hash]
         let current_hash_key = db_indexes::CurrentHash.get_index();
         let hash_value = encode(&hash).to_vec();
-        db.insert(
-            Some(DataCategory::Extra),
-            current_hash_key.to_vec(),
-            hash_value.clone(),
-        )
-        .expect("Insert block hash error.");
+        db.insert(Some(DataCategory::Extra), current_hash_key.to_vec(), hash_value.clone())
+            .expect("Insert block hash error.");
 
         // Insert [block_number, hash]
         let height_key = db_indexes::BlockNumber2Hash(self.block.number()).get_index();
@@ -292,30 +283,31 @@ impl Genesis {
 }
 
 pub fn is_permssion_contract(addr: Address) -> bool {
-    if addr == Address::from(reserved_addresses::PERMISSION_SEND_TX) ||
-    addr == Address::from(reserved_addresses::PERMISSION_CREATE_CONTRACT) ||
-    addr == Address::from(reserved_addresses::PERMISSION_NEW_PERMISSION) ||
-    addr == Address::from(reserved_addresses::PERMISSION_DELETE_PERMISSION) ||
-    addr == Address::from(reserved_addresses::PERMISSION_UPDATE_PERMISSION) ||
-    addr == Address::from(reserved_addresses::PERMISSION_SET_AUTH) ||
-    addr == Address::from(reserved_addresses::PERMISSION_CANCEL_AUTH) ||
-    addr == Address::from(reserved_addresses::PERMISSION_NEW_ROLE) ||
-    addr == Address::from(reserved_addresses::PERMISSION_DELETE_ROLE) ||
-    addr == Address::from(reserved_addresses::PERMISSION_UPDATE_ROLE) ||
-    addr == Address::from(reserved_addresses::PERMISSION_SET_ROLE) ||
-    addr == Address::from(reserved_addresses::PERMISSION_CANCEL_ROLE) ||
-    addr == Address::from(reserved_addresses::PERMISSION_NEW_GROUP) ||
-    addr == Address::from(reserved_addresses::PERMISSION_DELETE_GROUP) ||
-    addr == Address::from(reserved_addresses::PERMISSION_UPDATE_GROUP) ||
-    addr == Address::from(reserved_addresses::PERMISSION_NEW_NODE) ||
-    addr == Address::from(reserved_addresses::PERMISSION_DELETE_NODE) ||
-    addr == Address::from(reserved_addresses::PERMISSION_UPDATE_NODE) ||
-    addr == Address::from(reserved_addresses::PERMISSION_ACCOUNT_QUOTA) ||
-    addr == Address::from(reserved_addresses::PERMISSION_BLOCK_QUOTA) ||
-    addr == Address::from(reserved_addresses::PERMISSION_BATCH_TX) ||
-    addr == Address::from(reserved_addresses::PERMISSION_EMERGENCY_INTERVENTION) ||
-    addr == Address::from(reserved_addresses::PERMISSION_QUOTA_PRICE) ||
-    addr == Address::from(reserved_addresses::PERMISSION_VERSION) {
+    if addr == Address::from(reserved_addresses::PERMISSION_SEND_TX)
+        || addr == Address::from(reserved_addresses::PERMISSION_CREATE_CONTRACT)
+        || addr == Address::from(reserved_addresses::PERMISSION_NEW_PERMISSION)
+        || addr == Address::from(reserved_addresses::PERMISSION_DELETE_PERMISSION)
+        || addr == Address::from(reserved_addresses::PERMISSION_UPDATE_PERMISSION)
+        || addr == Address::from(reserved_addresses::PERMISSION_SET_AUTH)
+        || addr == Address::from(reserved_addresses::PERMISSION_CANCEL_AUTH)
+        || addr == Address::from(reserved_addresses::PERMISSION_NEW_ROLE)
+        || addr == Address::from(reserved_addresses::PERMISSION_DELETE_ROLE)
+        || addr == Address::from(reserved_addresses::PERMISSION_UPDATE_ROLE)
+        || addr == Address::from(reserved_addresses::PERMISSION_SET_ROLE)
+        || addr == Address::from(reserved_addresses::PERMISSION_CANCEL_ROLE)
+        || addr == Address::from(reserved_addresses::PERMISSION_NEW_GROUP)
+        || addr == Address::from(reserved_addresses::PERMISSION_DELETE_GROUP)
+        || addr == Address::from(reserved_addresses::PERMISSION_UPDATE_GROUP)
+        || addr == Address::from(reserved_addresses::PERMISSION_NEW_NODE)
+        || addr == Address::from(reserved_addresses::PERMISSION_DELETE_NODE)
+        || addr == Address::from(reserved_addresses::PERMISSION_UPDATE_NODE)
+        || addr == Address::from(reserved_addresses::PERMISSION_ACCOUNT_QUOTA)
+        || addr == Address::from(reserved_addresses::PERMISSION_BLOCK_QUOTA)
+        || addr == Address::from(reserved_addresses::PERMISSION_BATCH_TX)
+        || addr == Address::from(reserved_addresses::PERMISSION_EMERGENCY_INTERVENTION)
+        || addr == Address::from(reserved_addresses::PERMISSION_QUOTA_PRICE)
+        || addr == Address::from(reserved_addresses::PERMISSION_VERSION)
+    {
         return true;
     }
     false
@@ -352,10 +344,7 @@ mod test {
             "prevhash": "0x0000000000000000000000000000000000000000000000000000000000000000",
         });
         let spec = Spec {
-            prevhash: H256::from_str(
-                "0000000000000000000000000000000000000000000000000000000000000000",
-            )
-            .unwrap(),
+            prevhash: H256::from_str("0000000000000000000000000000000000000000000000000000000000000000").unwrap(),
             timestamp: 1524000000,
             alloc: [
                 (
