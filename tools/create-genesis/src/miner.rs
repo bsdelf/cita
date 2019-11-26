@@ -54,7 +54,8 @@ impl Miner {
         .expect("Create genesis exec error.");
 
         // Cal contract address
-        let contract_address = cita_vm::create_address_from_address_and_nonce(&sender, &U256::from(0));
+        let contract_address =
+            cita_vm::create_address_from_address_and_nonce(&sender, &U256::from(0));
 
         if let Some(account) = state_data_provider
             .borrow()

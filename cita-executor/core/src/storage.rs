@@ -74,7 +74,11 @@ impl Scalar {
     // single element
     pub fn set(
         self: &Self,
+<<<<<<< HEAD
         data_provider: &mut dyn DataProvider,
+=======
+        data_provider: &mut DataProvider,
+>>>>>>> Fix format issues[skip audit]
         addr: &Address,
         value: U256,
     ) -> Result<(), NativeError> {
@@ -84,7 +88,11 @@ impl Scalar {
 
     pub fn get(
         self: &Self,
+<<<<<<< HEAD
         data_provider: &dyn DataProvider,
+=======
+        data_provider: &DataProvider,
+>>>>>>> Fix format issues[skip audit]
         addr: &Address,
     ) -> Result<U256, NativeError> {
         let value = data_provider.get_storage(addr, &self.position);
@@ -94,7 +102,11 @@ impl Scalar {
     // bytes & string
     pub fn set_bytes<T>(
         self: &Self,
+<<<<<<< HEAD
         data_provider: &mut dyn DataProvider,
+=======
+        data_provider: &mut DataProvider,
+>>>>>>> Fix format issues[skip audit]
         addr: &Address,
         value: &T,
     ) -> Result<(), NativeError>
@@ -122,7 +134,11 @@ impl Scalar {
 
     pub fn get_bytes<T>(
         self: &Self,
+<<<<<<< HEAD
         data_provider: &dyn DataProvider,
+=======
+        data_provider: &DataProvider,
+>>>>>>> Fix format issues[skip audit]
         addr: &Address,
     ) -> Result<Box<T>, NativeError>
     where
@@ -184,7 +200,11 @@ impl Array {
 
     pub fn get(
         self: &Self,
+<<<<<<< HEAD
         data_provider: &dyn DataProvider,
+=======
+        data_provider: &DataProvider,
+>>>>>>> Fix format issues[skip audit]
         addr: &Address,
         index: u64,
     ) -> Result<U256, NativeError> {
@@ -208,7 +228,11 @@ impl Array {
 
     pub fn get_bytes<T>(
         self: &Self,
+<<<<<<< HEAD
         data_provider: &dyn DataProvider,
+=======
+        data_provider: &DataProvider,
+>>>>>>> Fix format issues[skip audit]
         addr: &Address,
         index: u64,
     ) -> Result<Box<T>, NativeError>
@@ -221,7 +245,11 @@ impl Array {
 
     pub fn set_len(
         self: &Self,
+<<<<<<< HEAD
         data_provider: &mut dyn DataProvider,
+=======
+        data_provider: &mut DataProvider,
+>>>>>>> Fix format issues[skip audit]
         addr: &Address,
         len: u64,
     ) -> Result<(), NativeError> {
@@ -231,7 +259,11 @@ impl Array {
 
     pub fn get_len(
         self: &Self,
+<<<<<<< HEAD
         data_provider: &dyn DataProvider,
+=======
+        data_provider: &DataProvider,
+>>>>>>> Fix format issues[skip audit]
         addr: &Address,
     ) -> Result<u64, NativeError> {
         let len = data_provider.get_storage(addr, &self.position);
@@ -282,7 +314,11 @@ impl Map {
 
     pub fn get<Key>(
         self: &Self,
+<<<<<<< HEAD
         data_provider: &dyn DataProvider,
+=======
+        data_provider: &DataProvider,
+>>>>>>> Fix format issues[skip audit]
         addr: &Address,
         key: &Key,
     ) -> Result<U256, NativeError>
@@ -351,28 +387,36 @@ mod tests {
 
         // 1) length=30
         let expected = format!("012345678901234567890123456789");
-        assert!(scalar.set_bytes(&mut data_provider, &code_address, &expected).is_ok());
+        assert!(scalar
+            .set_bytes(&mut data_provider, &code_address, &expected)
+            .is_ok());
         let value = scalar.get_bytes::<String>(&data_provider, &code_address);
         assert!(value.is_ok());
         assert_eq!(*value.unwrap().as_ref(), expected.clone());
 
         // 2) length=31
         let expected = format!("0123456789012345678901234567890");
-        assert!(scalar.set_bytes(&mut data_provider, &code_address, &expected).is_ok());
+        assert!(scalar
+            .set_bytes(&mut data_provider, &code_address, &expected)
+            .is_ok());
         let value = scalar.get_bytes::<String>(&data_provider, &code_address);
         assert!(value.is_ok());
         assert_eq!(*value.unwrap().as_ref(), expected.clone());
 
         // 3) length=32
         let expected = format!("01234567890123456789012345678901");
-        assert!(scalar.set_bytes(&mut data_provider, &code_address, &expected).is_ok());
+        assert!(scalar
+            .set_bytes(&mut data_provider, &code_address, &expected)
+            .is_ok());
         let value = scalar.get_bytes::<String>(&data_provider, &code_address);
         assert!(value.is_ok());
         assert_eq!(*value.unwrap().as_ref(), expected.clone());
 
         // 4) length=43
         let expected = format!("012345678901234567890123456789012");
-        assert!(scalar.set_bytes(&mut data_provider, &code_address, &expected).is_ok());
+        assert!(scalar
+            .set_bytes(&mut data_provider, &code_address, &expected)
+            .is_ok());
         let value = scalar.get_bytes::<String>(&data_provider, &code_address);
         assert!(value.is_ok());
         assert_eq!(*value.unwrap().as_ref(), expected.clone());
@@ -385,7 +429,9 @@ mod tests {
         let code_address = Address::from_str("ffffffffffffffffffffffffffffffffffffffff").unwrap();
 
         let expected = U256::from(0x123456);
-        assert!(scalar.set(&mut data_provider, &code_address, expected.clone()).is_ok());
+        assert!(scalar
+            .set(&mut data_provider, &code_address, expected.clone())
+            .is_ok());
         let value = scalar.get(&data_provider, &code_address);
         assert!(value.is_ok());
         assert_eq!(value.unwrap(), expected.clone());
@@ -395,24 +441,35 @@ mod tests {
     fn test_array_simple() {
         let mut data_provider = DataProviderMock::default();
         let length = 7u64;
-        let array = Array { position: H256::from(0) };
+        let array = Array {
+            position: H256::from(0),
+        };
         let code_address = Address::from_str("ffffffffffffffffffffffffffffffffffffffff").unwrap();
 
         // 1) length
-        assert!(array.set_len(&mut data_provider, &code_address, length).is_ok());
-        assert_eq!(array.get_len(&data_provider, &code_address).unwrap(), length);
+        assert!(array
+            .set_len(&mut data_provider, &code_address, length)
+            .is_ok());
+        assert_eq!(
+            array.get_len(&data_provider, &code_address).unwrap(),
+            length
+        );
 
         // 2) array[1] = 0x1234
         let index = 1;
         let expected = U256::from(0x1234);
-        assert!(array.set(&mut data_provider, &code_address, index, &expected).is_ok());
+        assert!(array
+            .set(&mut data_provider, &code_address, index, &expected)
+            .is_ok());
         let value = array.get(&data_provider, &code_address, index);
         assert_eq!(value.unwrap(), expected.clone());
 
         // 3) array[3] = 0x2234
         let index = 3;
         let expected = U256::from(0x2234);
-        assert!(array.set(&mut data_provider, &code_address, index, &expected).is_ok());
+        assert!(array
+            .set(&mut data_provider, &code_address, index, &expected)
+            .is_ok());
         let value = array.get(&data_provider, &code_address, index);
         assert_eq!(value.unwrap(), expected.clone());
     }
@@ -425,27 +482,47 @@ mod tests {
 
         // 1) length = 7
         let length = 7;
-        assert!(array.set_len(&mut data_provider, &code_address, length).is_ok());
-        assert_eq!(array.get_len(&data_provider, &code_address).unwrap(), length);
+        assert!(array
+            .set_len(&mut data_provider, &code_address, length)
+            .is_ok());
+        assert_eq!(
+            array.get_len(&data_provider, &code_address).unwrap(),
+            length
+        );
 
         // 2) array[1].len = 8
         let index = 1;
         let subarray_length = 8;
         let subarray = array.get_array(index);
-        assert!(subarray.set_len(&mut data_provider, &code_address, subarray_length).is_ok());
-        assert_eq!(subarray.get_len(&mut data_provider, &code_address).unwrap(), subarray_length);
+        assert!(subarray
+            .set_len(&mut data_provider, &code_address, subarray_length)
+            .is_ok());
+        assert_eq!(
+            subarray.get_len(&mut data_provider, &code_address).unwrap(),
+            subarray_length
+        );
 
         // 3) array[1][2] = 0x1234
         let index = 2;
         let expected = U256::from(0x1234);
-        assert!(subarray.set(&mut data_provider, &code_address, index, &expected).is_ok());
-        assert_eq!(subarray.get(&data_provider, &code_address, index).unwrap(), expected);
+        assert!(subarray
+            .set(&mut data_provider, &code_address, index, &expected)
+            .is_ok());
+        assert_eq!(
+            subarray.get(&data_provider, &code_address, index).unwrap(),
+            expected
+        );
 
         // 4) array[1][4] = 0x2234
         let index = 4;
         let expected = U256::from(0x2234);
-        assert!(subarray.set(&mut data_provider, &code_address, index, &expected).is_ok());
-        assert_eq!(subarray.get(&data_provider, &code_address, index).unwrap(), expected);
+        assert!(subarray
+            .set(&mut data_provider, &code_address, index, &expected)
+            .is_ok());
+        assert_eq!(
+            subarray.get(&data_provider, &code_address, index).unwrap(),
+            expected
+        );
     }
 
     #[test]
@@ -456,16 +533,28 @@ mod tests {
 
         // 1) length = 7
         let length = 7;
-        assert!(array.set_len(&mut data_provider, &code_address, length).is_ok());
-        assert_eq!(array.get_len(&data_provider, &code_address).unwrap(), length);
+        assert!(array
+            .set_len(&mut data_provider, &code_address, length)
+            .is_ok());
+        assert_eq!(
+            array.get_len(&data_provider, &code_address).unwrap(),
+            length
+        );
 
         // 2) array[1][2] = 0x1234
         let index = 1;
         let key = U256::from(2);
         let submap = array.get_map(index);
         let expected = U256::from(0x1234);
-        assert!(submap.set(&mut data_provider, &code_address, &key, expected).is_ok());
-        assert_eq!(submap.get::<U256>(&data_provider, &code_address, &key).unwrap(), expected);
+        assert!(submap
+            .set(&mut data_provider, &code_address, &key, expected)
+            .is_ok());
+        assert_eq!(
+            submap
+                .get::<U256>(&data_provider, &code_address, &key)
+                .unwrap(),
+            expected
+        );
 
         // 4) array[1]["key"] = "1234"
         let key = String::from("key");
@@ -490,24 +579,32 @@ mod tests {
         // 1) map["key"] = "value"
         let key = U256::from(1);
         let value = U256::from(0x1234);
-        assert!(map.set(&mut data_provider, &code_address, &key, value).is_ok());
+        assert!(map
+            .set(&mut data_provider, &code_address, &key, value)
+            .is_ok());
         assert_eq!(map.get(&data_provider, &code_address, &key).unwrap(), value);
 
         // 2) map[0] = "1234567890"
         let key = U256::from(1);
         let value = String::from("1234567890");
-        assert!(map.set_bytes(&mut data_provider, &code_address, &key, &value).is_ok());
+        assert!(map
+            .set_bytes(&mut data_provider, &code_address, &key, &value)
+            .is_ok());
         assert_eq!(
-            map.get_bytes::<U256, String>(&data_provider, &code_address, &key).unwrap(),
+            map.get_bytes::<U256, String>(&data_provider, &code_address, &key)
+                .unwrap(),
             value.clone()
         );
 
         // 3) map[0] = "123456789012345678901234567890123"
         let key = U256::from(1);
         let value = String::from("123456789012345678901234567890123");
-        assert!(map.set_bytes(&mut data_provider, &code_address, &key, &value).is_ok());
+        assert!(map
+            .set_bytes(&mut data_provider, &code_address, &key, &value)
+            .is_ok());
         assert_eq!(
-            map.get_bytes::<U256, String>(&data_provider, &code_address, &key).unwrap(),
+            map.get_bytes::<U256, String>(&data_provider, &code_address, &key)
+                .unwrap(),
             value
         );
 
@@ -517,7 +614,11 @@ mod tests {
         assert!(map
             .set(&mut data_provider, &code_address, &key, value)
             .is_ok());
+<<<<<<< HEAD
         assert_eq!(map.get(&data_provider, &code_address, &key).unwrap(), value);
+=======
+        assert_eq!(map.get(&data_provider, &code_address, &key).unwrap(), value);;
+>>>>>>> Fix format issues[skip audit]
     }
 
     #[test]
@@ -568,7 +669,9 @@ mod tests {
         let key2 = String::from("key2");
         let value = String::from("1234567890");
         let sub_map = map.get_map(&key1).unwrap();
-        assert!(sub_map.set_bytes(&mut data_provider, &code_address, &key2, &value).is_ok());
+        assert!(sub_map
+            .set_bytes(&mut data_provider, &code_address, &key2, &value)
+            .is_ok());
         assert_eq!(
             sub_map
                 .get_bytes::<String, String>(&data_provider, &code_address, &key2)
@@ -581,9 +684,13 @@ mod tests {
         let key2 = U256::from(2);
         let value = String::from("1234567890");
         let sub_map = map.get_map(&key1).unwrap();
-        assert!(sub_map.set_bytes(&mut data_provider, &code_address, &key2, &value).is_ok());
+        assert!(sub_map
+            .set_bytes(&mut data_provider, &code_address, &key2, &value)
+            .is_ok());
         assert_eq!(
-            sub_map.get_bytes::<_, String>(&data_provider, &code_address, &key2).unwrap(),
+            sub_map
+                .get_bytes::<_, String>(&data_provider, &code_address, &key2)
+                .unwrap(),
             value.clone()
         );
     }

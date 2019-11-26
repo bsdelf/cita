@@ -27,8 +27,8 @@ use libproto::blockchain::{AccountGasLimit, SignedTransaction, Transaction};
 use libproto::router::{MsgType, RoutingKey, SubModules};
 use libproto::snapshot::{Cmd, Resp, SnapshotReq, SnapshotResp};
 use libproto::{
-    BlackList, BlockTxHashes, BlockTxHashesReq, BlockTxn, Crypto, GetBlockTxn, Message, OperateType, Origin, Request,
-    Response, UnverifiedTransaction, VerifyBlockReq, VerifyTxReq,
+    BlackList, BlockTxHashes, BlockTxHashesReq, BlockTxn, Crypto, GetBlockTxn, Message,
+    OperateType, Origin, Request, Response, UnverifiedTransaction, VerifyBlockReq, VerifyTxReq,
 };
 use libproto::{TryFrom, TryInto};
 use lru::LruCache;
@@ -58,7 +58,10 @@ pub fn verify_tx_sig(crypto: Crypto, hash: &H256, sig_bytes: &[u8]) -> Result<Ve
 
     let sig = Signature::from(sig_bytes);
     match crypto {
-        Crypto::DEFAULT => sig.recover(&hash).map(|pubkey| pubkey.to_vec()).map_err(|_| ()),
+        Crypto::DEFAULT => sig
+            .recover(&hash)
+            .map(|pubkey| pubkey.to_vec())
+            .map_err(|_| ()),
         _ => {
             warn!("Unexpected crypto");
             Err(())
@@ -139,7 +142,10 @@ impl MsgHandler {
     }
 
     fn is_ready(&self) -> bool {
-        self.history_heights.is_init() && self.chain_id.is_some() && !self.is_snapshot && self.config_info.version.is_some()
+        self.history_heights.is_init()
+            && self.chain_id.is_some()
+            && !self.is_snapshot
+            && self.config_info.version.is_some()
     }
 
     fn is_flow_control(&self, tx_count: usize) -> bool {
@@ -161,7 +167,10 @@ impl MsgHandler {
         }
         if self.config_info.check_quota {
             let addr = pubkey_to_address(&PubKey::from(signer));
-            let mut quota_limit = self.config_info.account_quota_limit.get_common_quota_limit();
+            let mut quota_limit = self
+                .config_info
+                .account_quota_limit
+                .get_common_quota_limit();
             if let Some(value) = self
                 .config_info
                 .account_quota_limit
@@ -266,7 +275,11 @@ impl MsgHandler {
         };
 
         if chain_id != self.chain_id {
-            trace!("tx chain_id {:?}, self.chain_id {:?}", chain_id.unwrap(), self.chain_id);
+            trace!(
+                "tx chain_id {:?}, self.chain_id {:?}",
+                chain_id.unwrap(),
+                self.chain_id
+            );
             return Err(Error::BadChainId);
         }
 
@@ -306,7 +319,11 @@ impl MsgHandler {
         let tx_hash = H256::from_slice(req.get_tx_hash());
         for (height, hashes) in &self.history_hashes {
             if hashes.contains(&tx_hash) {
-                trace!("Tx with hash {:?} has already existed in height:{}", tx_hash, height);
+                trace!(
+                    "Tx with hash {:?} has already existed in height:{}",
+                    tx_hash,
+                    height
+                );
                 return Err(Error::Dup);
             }
         }
@@ -328,7 +345,10 @@ impl MsgHandler {
         trace!("response new tx {:?}", response);
         let msg: Message = response.into();
         self.tx_pub
-            .send((routing_key!(Auth >> Response).into(), msg.try_into().unwrap()))
+            .send((
+                routing_key!(Auth >> Response).into(),
+                msg.try_into().unwrap(),
+            ))
             .unwrap();
     }
 
@@ -342,7 +362,10 @@ impl MsgHandler {
 
         let msg: Message = response.into();
         self.tx_pub
-            .send((routing_key!(Auth >> Response).into(), msg.try_into().unwrap()))
+            .send((
+                routing_key!(Auth >> Response).into(),
+                msg.try_into().unwrap(),
+            ))
             .unwrap();
     }
 
@@ -355,7 +378,10 @@ impl MsgHandler {
         req.set_height(height);
         let msg: Message = req.into();
         self.tx_pub
-            .send((routing_key!(Auth >> BlockTxHashesReq).into(), msg.try_into().unwrap()))
+            .send((
+                routing_key!(Auth >> BlockTxHashesReq).into(),
+                msg.try_into().unwrap(),
+            ))
             .unwrap();
     }
 
@@ -517,7 +543,9 @@ impl MsgHandler {
 
         // because next height init value is 1
         // the empty chain first msg height is 0 with quota info
-        if height >= self.history_heights.next_height() || (self.history_heights.next_height() == 1 && height == 0) {
+        if height >= self.history_heights.next_height()
+            || (self.history_heights.next_height() == 1 && height == 0)
+        {
             // get latest quota info from chain
             let block_quota_limit = block_tx_hashes.get_block_quota_limit();
             let account_quota_limit = block_tx_hashes.get_account_quota_limit().clone();
@@ -537,7 +565,10 @@ impl MsgHandler {
                 trace!("Fetch new chain id");
                 let msg: Message = MiscellaneousReq::new().into();
                 self.tx_pub
-                    .send((routing_key!(Auth >> MiscellaneousReq).into(), msg.try_into().unwrap()))
+                    .send((
+                        routing_key!(Auth >> MiscellaneousReq).into(),
+                        msg.try_into().unwrap(),
+                    ))
                     .unwrap();
             }
             self.config_info.version = Some(block_tx_hashes.get_version());
@@ -650,7 +681,11 @@ impl MsgHandler {
             let results: Vec<(H256, Option<Vec<u8>>)> = requests_no_cached
                 .into_par_iter()
                 .map(|(tx_hash, ref req)| {
-                    let result = verify_tx_sig(req.get_crypto(), &H256::from(req.get_hash()), &req.get_signature());
+                    let result = verify_tx_sig(
+                        req.get_crypto(),
+                        &H256::from(req.get_hash()),
+                        &req.get_signature(),
+                    );
                     match result {
                         Ok(pubkey) => (tx_hash, Some(pubkey)),
                         Err(_) => (tx_hash, None),
@@ -754,7 +789,11 @@ impl MsgHandler {
                 }
                 req.set_signer(option_pubkey.unwrap());
             } else {
-                let result = verify_tx_sig(req.get_crypto(), &H256::from(req.get_hash()), &req.get_signature());
+                let result = verify_tx_sig(
+                    req.get_crypto(),
+                    &H256::from(req.get_hash()),
+                    &req.get_signature(),
+                );
                 self.save_ret_to_cache(tx_hash, result.clone().ok());
                 match result {
                     Ok(pubkey) => {
@@ -851,7 +890,9 @@ impl MsgHandler {
                 Some(ChainId::V0(miscellaneous.chain_id))
             } else if version < 3 {
                 if miscellaneous.chain_id_v1.len() == 32 {
-                    Some(ChainId::V1(U256::from(miscellaneous.chain_id_v1.as_slice())))
+                    Some(ChainId::V1(U256::from(
+                        miscellaneous.chain_id_v1.as_slice(),
+                    )))
                 } else {
                     None
                 }
@@ -884,7 +925,10 @@ impl MsgHandler {
         let msg = Message::init(OperateType::Single, origin, block_txn.into());
 
         self.tx_pub
-            .send((routing_key!(Auth >> BlockTxn).into(), (&msg).try_into().unwrap()))
+            .send((
+                routing_key!(Auth >> BlockTxn).into(),
+                (&msg).try_into().unwrap(),
+            ))
             .unwrap();
     }
 
@@ -907,7 +951,10 @@ impl MsgHandler {
                         let resp = verify_block_req.reply(Err(()));
                         let msg = Message::init(OperateType::Single, origin, resp.into());
                         self.tx_pub
-                            .send((routing_key!(Auth >> VerifyBlockResp).into(), (&msg).try_into().unwrap()))
+                            .send((
+                                routing_key!(Auth >> VerifyBlockResp).into(),
+                                (&msg).try_into().unwrap(),
+                            ))
                             .unwrap();
                         return;
                     }
@@ -929,7 +976,10 @@ impl MsgHandler {
 
             let msg = Message::init(OperateType::Single, 0, resp.into());
             self.tx_pub
-                .send((routing_key!(Auth >> VerifyBlockResp).into(), (&msg).try_into().unwrap()))
+                .send((
+                    routing_key!(Auth >> VerifyBlockResp).into(),
+                    (&msg).try_into().unwrap(),
+                ))
                 .unwrap();
         } else {
             info!("missing_hashes len : {}", missing_hashes.len());
@@ -937,14 +987,20 @@ impl MsgHandler {
 
             let mut get_block_txn = GetBlockTxn::new();
             get_block_txn.set_block_hash(block_hash.to_vec());
-            let missing_hashes = missing_hashes.into_iter().map(|hash| hash.to_vec()).collect();
+            let missing_hashes = missing_hashes
+                .into_iter()
+                .map(|hash| hash.to_vec())
+                .collect();
             get_block_txn.set_short_ids(missing_hashes);
 
             self.block_txn_req = Some((origin, get_block_txn.clone()));
 
             let msg = Message::init(OperateType::Single, origin, get_block_txn.into());
             self.tx_pub
-                .send((routing_key!(Auth >> GetBlockTxn).into(), (&msg).try_into().unwrap()))
+                .send((
+                    routing_key!(Auth >> GetBlockTxn).into(),
+                    (&msg).try_into().unwrap(),
+                ))
                 .unwrap();
         }
     }
@@ -993,7 +1049,10 @@ impl MsgHandler {
             };
             let msg = Message::init(OperateType::Single, 0, resp.into());
             self.tx_pub
-                .send((routing_key!(Auth >> VerifyBlockResp).into(), (&msg).try_into().unwrap()))
+                .send((
+                    routing_key!(Auth >> VerifyBlockResp).into(),
+                    (&msg).try_into().unwrap(),
+                ))
                 .unwrap();
         };
     }
@@ -1039,7 +1098,10 @@ fn snapshot_response(sender: &Sender<(String, Vec<u8>)>, ack: Resp, flag: bool) 
     resp.set_flag(flag);
     let msg: Message = resp.into();
     sender
-        .send((routing_key!(Auth >> SnapshotResp).into(), (&msg).try_into().unwrap()))
+        .send((
+            routing_key!(Auth >> SnapshotResp).into(),
+            (&msg).try_into().unwrap(),
+        ))
         .unwrap();
 }
 
@@ -1050,7 +1112,8 @@ pub fn verify_base_quota_required(tx: &Transaction) -> bool {
         _ => {
             let to = tx.get_to_v1();
             if to.is_empty() || Address::from(to) == Address::zero() {
-                tx.get_quota() as usize >= tx.data.len() * G_TX_DATA_NON_ZERO + G_TRANSACTION + G_CREATE
+                tx.get_quota() as usize
+                    >= tx.data.len() * G_TX_DATA_NON_ZERO + G_TRANSACTION + G_CREATE
             } else {
                 tx.get_quota() as usize >= tx.data.len() * G_TX_DATA_NON_ZERO + G_TRANSACTION
             }
