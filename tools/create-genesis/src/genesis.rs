@@ -133,20 +133,20 @@ impl<'a> GenesisCreator<'a> {
                 );
                 let bytes = constructor.encode_input(input_data, &params).unwrap();
 
-                if *contract_name == "Admin" {
+                if *contract_name == "Admin" || *contract_name == "QuotaManager" {
                     let mut param = BTreeMap::new();
                     let addr = match params.get(0) {
                         Some(Token::Address(addr)) => addr,
                         _ => unimplemented!(),
                     };
                     param.insert("admin".to_string(), addr.hex());
-                    let admin_contract = Account {
+                    let contract = Account {
                         nonce: U256::from(1),
                         code: "".to_string(),
                         storage: param,
                         value: U256::from(0),
                     };
-                    self.accounts.insert((*address).clone(), admin_contract);
+                    self.accounts.insert((*address).clone(), contract);
                 } else if *contract_name == "PriceManager" {
                     let mut param = BTreeMap::new();
                     let quota_price = match params.get(0) {
