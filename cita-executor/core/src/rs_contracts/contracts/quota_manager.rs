@@ -24,8 +24,8 @@ use tiny_keccak::keccak256;
 const BQL_VALUE: u64 = 1_073_741_824;
 const AQL_VALUE: u64 = 268_435_456;
 pub const AUTO_EXEC_QL_VALUE: u64 = 1_048_576;
-const MAX_LIMIT: u64 = 9_223_372_036_854_775_808;   // 2 ** 63
-const MIN_LIMIT: u64 = 4_194_304;   // 2 ** 22
+const MAX_LIMIT: u64 = 9_223_372_036_854_775_808; // 2 ** 63
+const MIN_LIMIT: u64 = 4_194_304; // 2 ** 22
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct QuotaContract {

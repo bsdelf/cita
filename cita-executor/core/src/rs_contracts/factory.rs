@@ -111,7 +111,7 @@ impl<B: DB> ContractsFactory<B> {
             || *addr == Address::from(reserved_addresses::EMERGENCY_INTERVENTION)
             || *addr == Address::from(reserved_addresses::SYS_CONFIG)
             || *addr == Address::from(reserved_addresses::QUOTA_MANAGER)
-            // || *addr == Address::from(reserved_addresses::NODE_MANAGER)
+            || *addr == Address::from(reserved_addresses::NODE_MANAGER)
             || is_permssion_contract(*addr)
         {
             return true;
