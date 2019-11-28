@@ -5,13 +5,14 @@ pub mod utils;
 
 pub mod admin;
 pub mod emergency_intervention;
-pub mod group;
+// pub mod group;
 pub mod node_manager;
 pub mod perm;
 pub mod perm_manager;
 pub mod price;
 pub mod quota_manager;
 pub mod sys_config;
+pub mod version;
 
 pub use admin::Admin;
 pub use contract::Contract;

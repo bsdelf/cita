@@ -42,6 +42,7 @@ use crate::rs_contracts::contracts::perm::Permission;
 use crate::rs_contracts::contracts::price::Price;
 use crate::rs_contracts::contracts::quota_manager::QuotaManager;
 use crate::rs_contracts::contracts::sys_config::Sysconfig;
+use crate::rs_contracts::contracts::version::Version;
 
 use crate::rs_contracts::contracts::utils::{
     encode_string, hex_to_integer, string_to_bool, string_to_static_str, string_to_u64,
@@ -197,6 +198,18 @@ impl Genesis {
                         trace!("===> price contract value {:?}", price);
                         let contract_price = Price::new(price);
                         let str = serde_json::to_string(&contract_price).unwrap();
+                        contracts_factory.register(address, str);
+                    }
+                }
+            } else if address == Address::from(reserved_addresses::VERSION_MANAGEMENT) {
+                // price contract
+                for (key, value) in contract.storage.clone() {
+                    trace!("===> version contract key {:?}", key);
+                    if *key == "version".to_string() {
+                        let version = U256::from_dec_str(&value).unwrap();
+                        trace!("===> version contract value {:?}", version);
+                        let contract_version = Version::new(version);
+                        let str = serde_json::to_string(&contract_version).unwrap();
                         contracts_factory.register(address, str);
                     }
                 }

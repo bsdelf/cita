@@ -161,6 +161,20 @@ impl<'a> GenesisCreator<'a> {
                         value: U256::from(0),
                     };
                     self.accounts.insert((*address).clone(), price_contract);
+                } else if *contract_name == "VersionManager" {
+                    let mut param = BTreeMap::new();
+                    let version = match params.get(0) {
+                        Some(Token::Uint(v)) => v,
+                        _ => unimplemented!(),
+                    };
+                    param.insert("version".to_string(), version.to_string());
+                    let contract = Account {
+                        nonce: U256::from(1),
+                        code: "".to_string(),
+                        storage: param,
+                        value: U256::from(0),
+                    };
+                    self.accounts.insert((*address).clone(), contract);
                 } else if *contract_name == "Authorization" {
                     let mut param = BTreeMap::new();
                     let addr = match params.get(0) {

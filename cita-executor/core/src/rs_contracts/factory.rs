@@ -11,6 +11,7 @@ use common_types::context::Context;
 use std::sync::Arc;
 
 use crate::rs_contracts::contracts::admin::AdminContract;
+use crate::rs_contracts::contracts::version::VersionContract;
 use crate::rs_contracts::contracts::contract::Contract;
 use crate::rs_contracts::contracts::emergency_intervention::EmergContract;
 use crate::rs_contracts::contracts::node_manager::NodeStore;
@@ -36,6 +37,7 @@ pub struct ContractsFactory<B> {
     system_contract: SystemContract,
     nodes_store: NodeStore,
     quota_contract: QuotaContract,
+    version_contract: VersionContract,
 }
 
 impl<B: DB> ContractsFactory<B> {
@@ -54,7 +56,10 @@ impl<B: DB> ContractsFactory<B> {
             updated_hash = self
                 .price_contract
                 .init(contract, self.contracts_db.clone());
-        } else if address == Address::from(reserved_addresses::EMERGENCY_INTERVENTION) {
+        } else if address == Address::from(reserved_addresses::VERSION_MANAGEMENT) {
+            updated_hash = self.version_contract.init(contract, self.contracts_db.clone());
+        }
+         else if address == Address::from(reserved_addresses::EMERGENCY_INTERVENTION) {
             updated_hash = self
                 .emerg_contract
                 .init(contract, self.contracts_db.clone());
@@ -100,6 +105,7 @@ impl<B: DB> ContractsFactory<B> {
             system_contract: SystemContract::default(),
             nodes_store: NodeStore::default(),
             quota_contract: QuotaContract::default(),
+            version_contract: VersionContract::default(),
         }
     }
 
@@ -112,6 +118,7 @@ impl<B: DB> ContractsFactory<B> {
             || *addr == Address::from(reserved_addresses::SYS_CONFIG)
             || *addr == Address::from(reserved_addresses::QUOTA_MANAGER)
             || *addr == Address::from(reserved_addresses::NODE_MANAGER)
+            || *addr == Address::from(reserved_addresses::VERSION_MANAGEMENT)
             || is_permssion_contract(*addr)
         {
             return true;
@@ -140,7 +147,15 @@ impl<B: DB> ContractsFactory<B> {
                 self.contracts_db.clone(),
                 self.state.clone(),
             );
-        } else if params.contract.code_address
+        } else if params.contract.code_address == Address::from(reserved_addresses::VERSION_MANAGEMENT) {
+            return self.version_contract.execute(
+                &params,
+                context,
+                self.contracts_db.clone(),
+                self.state.clone(),
+            );
+        }
+         else if params.contract.code_address
             == Address::from(reserved_addresses::EMERGENCY_INTERVENTION)
         {
             return self.emerg_contract.execute(
