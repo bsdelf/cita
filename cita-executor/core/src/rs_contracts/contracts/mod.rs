@@ -5,7 +5,8 @@ pub mod utils;
 
 pub mod admin;
 pub mod emergency_intervention;
-// pub mod group;
+pub mod group;
+pub mod group_manager;
 pub mod node_manager;
 pub mod perm;
 pub mod perm_manager;

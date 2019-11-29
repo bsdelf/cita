@@ -28,6 +28,7 @@ use cita_vm::state::StateObjectInfo;
 use common_types::reserved_addresses;
 use ethabi::token::LenientTokenizer;
 use ethabi::token::Tokenizer;
+use cita_types::traits::LowerHex;
 
 pub type FuncSig = [u8; 4];
 
@@ -353,7 +354,7 @@ impl PermManager {
                     trace!("perm_addrs {:?}", perm_addrs);
                     trace!("perm_funcs {:?}", perm_funcs);
 
-                    let perm = Permission::new(perm_name.hex(), perm_addrs, perm_funcs);
+                    let perm = Permission::new(perm_name.lower_hex(), perm_addrs, perm_funcs);
                     let nonce = state
                         .borrow_mut()
                         .nonce(&Address::from(reserved_addresses::PERMISSION_CREATOR))
@@ -464,7 +465,7 @@ impl PermManager {
             ));
         }
         let perm_address = Address::from(&params.input[16..36]);
-        let perm_name = H256::from(&params.input[36..68]).hex();
+        let perm_name = H256::from(&params.input[36..68]).lower_hex();
         trace!(
             "params decoded: perm_address: {:?}, perm_name: {:?}",
             perm_address,
@@ -979,11 +980,11 @@ impl PermManager {
         if let Some(p) = self.perm_collection.get(&perm_address) {
             let name = p.query_name();
             trace!("permission name {:?}", name);
+            trace!("permission name bin {:?}", name);
             // let mut res = H256::from(0);
             // res.clone_from_slice(&name.as_bytes());
             let res =
                 LenientTokenizer::tokenize(&ParamType::FixedBytes(32), &clean_0x(&name)).unwrap();
-            trace!("permission name bin {:?}", name);
             return Ok(InterpreterResult::Normal(
                 res.clone().to_fixed_bytes().unwrap(),
                 params.gas_limit,

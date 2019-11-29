@@ -37,6 +37,7 @@ use std::u64;
 
 use crate::rs_contracts::contracts::admin::Admin;
 use crate::rs_contracts::contracts::emergency_intervention;
+use crate::rs_contracts::contracts::group_manager::GroupManager;
 use crate::rs_contracts::contracts::node_manager::NodeManager;
 use crate::rs_contracts::contracts::perm::Permission;
 use crate::rs_contracts::contracts::price::Price;
@@ -151,10 +152,8 @@ impl Genesis {
             if address == Address::from(reserved_addresses::ADMIN) {
                 // admin contract
                 for (key, value) in contract.storage.clone() {
-                    trace!("===> admin contract key {:?}", key);
                     if *key == "admin".to_string() {
                         let admin = Address::from_unaligned(value.as_str()).unwrap();
-                        trace!("===> admin contract value {:?}", admin);
                         let contract_admin = Admin::init(admin);
                         let str = serde_json::to_string(&contract_admin).unwrap();
                         contracts_factory.register(address, str);
@@ -163,10 +162,8 @@ impl Genesis {
             } else if address == Address::from(reserved_addresses::QUOTA_MANAGER) {
                 // admin contract
                 for (key, value) in contract.storage.clone() {
-                    trace!("===> quota contract key {:?}", key);
                     if *key == "admin".to_string() {
                         let admin = Address::from_unaligned(value.as_str()).unwrap();
-                        trace!("===> admin contract value {:?}", admin);
                         let contract_admin = QuotaManager::new(admin);
                         let str = serde_json::to_string(&contract_admin).unwrap();
                         contracts_factory.register(address, str);
@@ -177,10 +174,8 @@ impl Genesis {
                 // TODO: delete this contract address and use permission management
                 // Remove this contract and get admin from db directly
                 for (key, value) in contract.storage.clone() {
-                    trace!("===> admin contract key {:?}", key);
                     if *key == "admin".to_string() {
                         let param_address = Address::from_unaligned(value.as_str()).unwrap();
-                        trace!("===> admin contract value {:?}", param_address);
                         // let contract_admin = Admin::init(admin);
                         // let str = serde_json::to_string(&contract_admin).unwrap();
                         // contracts_factory.register(address, str);
@@ -192,10 +187,8 @@ impl Genesis {
             } else if address == Address::from(reserved_addresses::PRICE_MANAGEMENT) {
                 // price contract
                 for (key, value) in contract.storage.clone() {
-                    trace!("===> price contract key {:?}", key);
                     if *key == "quota_price".to_string() {
                         let price = U256::from_dec_str(&value).unwrap();
-                        trace!("===> price contract value {:?}", price);
                         let contract_price = Price::new(price);
                         let str = serde_json::to_string(&contract_price).unwrap();
                         contracts_factory.register(address, str);
@@ -204,10 +197,8 @@ impl Genesis {
             } else if address == Address::from(reserved_addresses::VERSION_MANAGEMENT) {
                 // price contract
                 for (key, value) in contract.storage.clone() {
-                    trace!("===> version contract key {:?}", key);
                     if *key == "version".to_string() {
                         let version = U256::from_dec_str(&value).unwrap();
-                        trace!("===> version contract value {:?}", version);
                         let contract_version = Version::new(version);
                         let str = serde_json::to_string(&contract_version).unwrap();
                         contracts_factory.register(address, str);
@@ -223,6 +214,22 @@ impl Genesis {
 
                 let node_manager = NodeManager::new(nodes, stakes);
                 let str = serde_json::to_string(&node_manager).unwrap();
+                contracts_factory.register(address, str);
+            } else if address == Address::from(reserved_addresses::GROUP) {
+                let mut accounts = Vec::new();
+                let mut parent = Address::default();
+                let mut name = String::default();
+                for (key, value) in contract.storage.clone() {
+                    if *key == "parent".to_string() {
+                        parent = Address::from_unaligned(&value).unwrap();
+                    } else if *key == "name".to_string() {
+                        name = value;
+                    } else {
+                        accounts.push(Address::from_unaligned(&value).unwrap());
+                    }
+                }
+                let group_manager = GroupManager::new(&name, parent, accounts);
+                let str = serde_json::to_string(&group_manager).unwrap();
                 contracts_factory.register(address, str);
             } else if address == Address::from(reserved_addresses::SYS_CONFIG) {
                 let auto_exec = contract
@@ -312,7 +319,7 @@ impl Genesis {
                     } else {
                         let addr = Address::from_unaligned(value.as_str()).unwrap();
                         conts.push(addr);
-                        let mut hash_key = Vec::new();
+                        let mut hash_key;
                         if addr == Address::from(reserved_addresses::PERMISSION_SEND_TX)
                             || addr == Address::from(reserved_addresses::PERMISSION_CREATE_CONTRACT)
                         {

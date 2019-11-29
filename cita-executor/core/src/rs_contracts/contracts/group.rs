@@ -9,7 +9,7 @@ pub struct Group {
 }
 
 impl Group {
-    pub fn new(name: String, parent: Address, accounts: Vec<Address>) {
+    pub fn new(name: String, parent: Address, accounts: Vec<Address>) -> Self {
         Group {
             name,
             parent,
@@ -18,17 +18,17 @@ impl Group {
         }
     }
 
-    pub fn add_account(&mut self, accounts: Vec<Address>) {
+    pub fn add_accounts(&mut self, accounts: Vec<Address>) {
         for i in accounts.iter() {
             if !self.accounts.contains(i) {
-                self.accounts.push(i);
+                self.accounts.push(*i);
             }
         }
     }
 
-    pub fn delete_account(&mut self, account: Vec<Address>) {
+    pub fn delete_accounts(&mut self, account: Vec<Address>) {
         for i in account.iter() {
-            self.accounts.retain(|&x| x != i);
+            self.accounts.retain(|&x| x != *i);
         }
     }
 
@@ -41,24 +41,32 @@ impl Group {
     }
 
     pub fn add_child(&mut self, child: Address) {
-        if !self.children.contains(child) {
+        if !self.children.contains(&child) {
             self.children.push(child);
         }
     }
 
-    pub fn query_name() -> String {
+    pub fn query_name(&self) -> String {
         self.name.clone()
     }
 
-    pub fn query_child() -> Vec<Address> {
-        self.children
+    pub fn query_accounts(&self) -> Vec<Address> {
+        self.accounts.clone()
     }
 
-    pub fn query_child_len() -> u64 {
+    pub fn query_childs(&self) -> Vec<Address> {
+        self.children.clone()
+    }
+
+    pub fn query_parent(&self) -> Address {
+        self.parent.clone()
+    }
+
+    pub fn query_childs_len(&self) -> usize {
         self.children.len()
     }
 
-    pub fn in_group(account: Address) -> bool {
+    pub fn in_group(&self, account: Address) -> bool {
         self.accounts.contains(&account)
     }
 }

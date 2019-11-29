@@ -1,11 +1,10 @@
 use super::check;
-use super::utils::{extract_to_u32, get_latest_key, h256_to_bool};
+use super::utils::{extract_to_u32, get_latest_key};
 
 use cita_types::{Address, H256, U256};
 use cita_vm::evm::{InterpreterParams, InterpreterResult};
 use common_types::context::Context;
 use common_types::errors::ContractError;
-use serde::{Deserialize, Serialize};
 
 use super::contract::Contract;
 use crate::rs_contracts::storage::db_contracts::ContractsDB;

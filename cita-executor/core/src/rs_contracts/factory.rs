@@ -5,20 +5,21 @@ use common_types::reserved_addresses;
 // use crate::contracts::Sysconfig;
 use crate::rs_contracts::contracts::utils::is_permssion_contract;
 
-use cita_types::{Address, H256, U256};
+use cita_types::{Address, H256};
 use common_types::context::Context;
 
 use std::sync::Arc;
 
 use crate::rs_contracts::contracts::admin::AdminContract;
-use crate::rs_contracts::contracts::version::VersionContract;
 use crate::rs_contracts::contracts::contract::Contract;
 use crate::rs_contracts::contracts::emergency_intervention::EmergContract;
+use crate::rs_contracts::contracts::group_manager::GroupStore;
 use crate::rs_contracts::contracts::node_manager::NodeStore;
 use crate::rs_contracts::contracts::perm_manager::PermStore;
 use crate::rs_contracts::contracts::price::PriceContract;
 use crate::rs_contracts::contracts::quota_manager::QuotaContract;
 use crate::rs_contracts::contracts::sys_config::SystemContract;
+use crate::rs_contracts::contracts::version::VersionContract;
 use crate::rs_contracts::storage::db_contracts::ContractsDB;
 
 use cita_trie::DB;
@@ -38,6 +39,7 @@ pub struct ContractsFactory<B> {
     nodes_store: NodeStore,
     quota_contract: QuotaContract,
     version_contract: VersionContract,
+    group_store: GroupStore,
 }
 
 impl<B: DB> ContractsFactory<B> {
@@ -57,9 +59,10 @@ impl<B: DB> ContractsFactory<B> {
                 .price_contract
                 .init(contract, self.contracts_db.clone());
         } else if address == Address::from(reserved_addresses::VERSION_MANAGEMENT) {
-            updated_hash = self.version_contract.init(contract, self.contracts_db.clone());
-        }
-         else if address == Address::from(reserved_addresses::EMERGENCY_INTERVENTION) {
+            updated_hash = self
+                .version_contract
+                .init(contract, self.contracts_db.clone());
+        } else if address == Address::from(reserved_addresses::EMERGENCY_INTERVENTION) {
             updated_hash = self
                 .emerg_contract
                 .init(contract, self.contracts_db.clone());
@@ -73,6 +76,8 @@ impl<B: DB> ContractsFactory<B> {
             updated_hash = self
                 .quota_contract
                 .init(contract, self.contracts_db.clone());
+        } else if address == Address::from(reserved_addresses::GROUP) {
+            updated_hash = self.group_store.init(contract, self.contracts_db.clone());
         }
         trace!("===> updated hash {:?}", updated_hash);
         // new a contract account, storage(key = height, value = hash(contracts))
@@ -106,6 +111,7 @@ impl<B: DB> ContractsFactory<B> {
             nodes_store: NodeStore::default(),
             quota_contract: QuotaContract::default(),
             version_contract: VersionContract::default(),
+            group_store: GroupStore::default(),
         }
     }
 
@@ -119,6 +125,8 @@ impl<B: DB> ContractsFactory<B> {
             || *addr == Address::from(reserved_addresses::QUOTA_MANAGER)
             || *addr == Address::from(reserved_addresses::NODE_MANAGER)
             || *addr == Address::from(reserved_addresses::VERSION_MANAGEMENT)
+            || *addr == Address::from(reserved_addresses::GROUP)
+            || *addr == Address::from(reserved_addresses::GROUP_MANAGEMENT)
             || is_permssion_contract(*addr)
         {
             return true;
@@ -147,15 +155,16 @@ impl<B: DB> ContractsFactory<B> {
                 self.contracts_db.clone(),
                 self.state.clone(),
             );
-        } else if params.contract.code_address == Address::from(reserved_addresses::VERSION_MANAGEMENT) {
+        } else if params.contract.code_address
+            == Address::from(reserved_addresses::VERSION_MANAGEMENT)
+        {
             return self.version_contract.execute(
                 &params,
                 context,
                 self.contracts_db.clone(),
                 self.state.clone(),
             );
-        }
-         else if params.contract.code_address
+        } else if params.contract.code_address
             == Address::from(reserved_addresses::EMERGENCY_INTERVENTION)
         {
             return self.emerg_contract.execute(
@@ -180,6 +189,15 @@ impl<B: DB> ContractsFactory<B> {
             );
         } else if params.contract.code_address == Address::from(reserved_addresses::QUOTA_MANAGER) {
             return self.quota_contract.execute(
+                &params,
+                context,
+                self.contracts_db.clone(),
+                self.state.clone(),
+            );
+        } else if params.contract.code_address == Address::from(reserved_addresses::GROUP)
+            || params.contract.code_address == Address::from(reserved_addresses::GROUP_MANAGEMENT)
+        {
+            return self.group_store.execute(
                 &params,
                 context,
                 self.contracts_db.clone(),

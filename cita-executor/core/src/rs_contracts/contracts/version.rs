@@ -2,7 +2,7 @@ use super::check;
 use super::utils::{extract_to_u32, get_latest_key};
 
 use cita_types::{H256, U256};
-use cita_vm::evm::{InterpreterParams, InterpreterResult, Log};
+use cita_vm::evm::{InterpreterParams, InterpreterResult};
 use common_types::context::Context;
 use common_types::errors::ContractError;
 

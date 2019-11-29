@@ -2,7 +2,7 @@ use super::check;
 use super::utils::{extract_to_u32, get_latest_key};
 
 use cita_types::{Address, H256, U256};
-use cita_vm::evm::{InterpreterParams, InterpreterResult, Log};
+use cita_vm::evm::{InterpreterParams, InterpreterResult};
 use common_types::context::Context;
 use common_types::errors::ContractError;
 
@@ -11,13 +11,10 @@ use crate::rs_contracts::storage::db_contracts::ContractsDB;
 use crate::rs_contracts::storage::db_trait::DataBase;
 use crate::rs_contracts::storage::db_trait::DataCategory;
 
-use crate::libexecutor::economical_model::EconomicalModel;
-use crate::rs_contracts::contracts::utils::{clean_0x, encode_string};
+use crate::rs_contracts::contracts::utils::encode_string;
 use cita_trie::DB;
 use cita_vm::state::State;
 use ethabi::param_type::ParamType;
-use ethabi::token::LenientTokenizer;
-use ethabi::token::Tokenizer;
 use ethabi::Token;
 use std::cell::RefCell;
 use std::collections::BTreeMap;

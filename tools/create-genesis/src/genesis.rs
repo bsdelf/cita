@@ -223,6 +223,39 @@ impl<'a> GenesisCreator<'a> {
                         }
                         _ => panic!("parse error when init node manager"),
                     }
+                } else if *contract_name == "Group" {
+                    match (params.get(0), params.get(1), params.get(2)) {
+                        (
+                            Some(Token::Address(a)),
+                            Some(Token::FixedBytes(b)),
+                            Some(Token::Array(s)),
+                        ) => {
+                            let parent = Address::from_slice(a);
+                            let name = String::from_utf8(b.to_vec()).unwrap();
+                            let accounts = s
+                                .iter()
+                                .map(|i| match i {
+                                    Token::Address(x) => Address::from_slice(x),
+                                    _ => unreachable!(),
+                                })
+                                .collect::<Vec<Address>>();
+                            let mut param = BTreeMap::new();
+                            param.insert("parent".to_string(), parent.hex());
+                            param.insert("name".to_string(), name.to_string());
+                            for i in 0..accounts.len() {
+                                param.insert("accounts".to_string(), accounts[i].hex());
+                            }
+
+                            let contract = Account {
+                                nonce: U256::from(1),
+                                code: "".to_string(),
+                                storage: param,
+                                value: U256::from(0),
+                            };
+                            self.accounts.insert((*address).clone(), contract);
+                        }
+                        _ => panic!("parse error when init group"),
+                    }
                 } else if *contract_name == "SysConfig" {
                     let mut param = BTreeMap::new();
                     let delay_block_number = match params.get(0) {
@@ -311,6 +344,11 @@ impl<'a> GenesisCreator<'a> {
                         value: U256::from(0),
                     };
                     self.accounts.insert((*address).clone(), contract);
+                } else if *contract_name == "ChainManager"
+                    || *contract_name == "GroupManagement"
+                    || *contract_name == "GroupCreator"
+                {
+                    continue;
                 } else {
                     if let Some(account) = Miner::mine(bytes) {
                         self.accounts.insert((*address).clone(), account);

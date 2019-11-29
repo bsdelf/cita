@@ -96,8 +96,6 @@ impl<'a> PermissionManagement<'a> {
         }
 
         account_permissions
-
-        // 修改为直接读 db
     }
 
     /// Account array
@@ -121,7 +119,6 @@ impl<'a> PermissionManagement<'a> {
     pub fn get_super_admin_account(&self, block_tag: BlockTag) -> Option<Address> {
         self.all_accounts(block_tag)
             .and_then(|accounts| accounts.first().cloned())
-        // 修改成直接读 db
     }
 
     /// Permission array

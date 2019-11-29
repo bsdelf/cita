@@ -112,7 +112,7 @@ pub fn string_to_bool(s: &str) -> bool {
 }
 
 pub fn hex_to_integer(s: &str) -> u64 {
-    if let Ok(r) = u64::from_str_radix("bb8", 16) {
+    if let Ok(r) = u64::from_str_radix(s, 16) {
         return r;
     }
     0
