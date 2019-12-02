@@ -16,7 +16,6 @@ use cita_vm::state::State;
 use ethabi::Token;
 use std::cell::RefCell;
 use std::collections::BTreeMap;
-use std::collections::HashMap;
 use std::sync::Arc;
 use tiny_keccak::keccak256;
 
@@ -172,15 +171,15 @@ impl<B: DB> Contract<B> for NodeStore {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct NodeManager {
-    status: HashMap<Address, bool>, // false -> closed, false -> open
+    status: BTreeMap<Address, bool>, // false -> closed, false -> open
     nodes: Vec<Address>,
-    stakes: HashMap<Address, U256>,
+    stakes: BTreeMap<Address, U256>,
 }
 
 impl NodeManager {
     pub fn new(nodes: Vec<Address>, stakes: Vec<U256>) -> Self {
-        let mut stakes_map = HashMap::new();
-        let mut status_map = HashMap::new();
+        let mut stakes_map = BTreeMap::new();
+        let mut status_map = BTreeMap::new();
         for i in 0..nodes.len() {
             stakes_map.insert(nodes[i], stakes[i]);
             status_map.insert(nodes[i], true);
@@ -202,7 +201,7 @@ impl NodeManager {
         trace!("Node contract set_stake, params {:?}", params.input);
         if check::only_admin(params, context, contracts_db.clone()).expect("Not admin") {
             let param_address = Address::from_slice(&params.input[16..36]);
-            let param_stake = U256::from(20);
+            let param_stake = U256::from(&params.input[36..]);
             trace!("param address decoded is {:?}", param_address);
             trace!("param stake decoded is {:?}", param_stake);
             if let Some(stake) = self.stakes.get_mut(&param_address) {

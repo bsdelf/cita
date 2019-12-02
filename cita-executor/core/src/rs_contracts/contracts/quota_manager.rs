@@ -16,7 +16,6 @@ use cita_vm::state::State;
 use ethabi::Token;
 use std::cell::RefCell;
 use std::collections::BTreeMap;
-use std::collections::HashMap;
 use std::sync::Arc;
 use tiny_keccak::keccak256;
 
@@ -172,14 +171,14 @@ impl<B: DB> Contract<B> for QuotaContract {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QuotaManager {
-    account_quota: HashMap<Address, U256>,
+    account_quota: BTreeMap<Address, U256>,
     default_block_quota_limit: U256,
     default_account_quota_limit: U256,
 }
 
 impl QuotaManager {
     pub fn new(admin: Address) -> Self {
-        let mut account_quota = HashMap::new();
+        let mut account_quota = BTreeMap::new();
         account_quota.insert(admin, U256::from(BQL_VALUE));
 
         QuotaManager {

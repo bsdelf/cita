@@ -203,14 +203,14 @@ impl<'a> GenesisCreator<'a> {
                             let stakes: Vec<U256> = s
                                 .iter()
                                 .map(|i| match i {
-                                    Token::Uint(x) => *x,
+                                    Token::Uint(x) => U256::from(*x),
                                     _ => unreachable!(),
                                 })
-                                .collect::<Vec<_>>();
+                                .collect::<Vec<U256>>();
 
                             let mut param = BTreeMap::new();
                             for i in 0..nodes.len() {
-                                param.insert(nodes[i].hex(), stakes[i].to_string());
+                                param.insert(nodes[i].hex(), stakes[i].to_hex());
                             }
 
                             let contract = Account {
