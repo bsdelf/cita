@@ -33,6 +33,7 @@ use std::io::BufReader;
 use std::io::Read;
 use std::path::Path;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 use std::u64;
 
 use crate::rs_contracts::contracts::admin::Admin;
@@ -133,6 +134,7 @@ impl Genesis {
             *self.block.state_root(),
         )
         .expect("Can not get state from db!");
+        let start = Instant::now();
 
         let state = Arc::new(RefCell::new(state));
         let mut contracts_factory = ContractsFactory::new(state.clone(), contracts_db.clone());
@@ -391,6 +393,9 @@ impl Genesis {
         trace!("root {:?}", root);
         self.block.set_state_root(root);
         self.block.rehash();
+
+        let duration = start.elapsed();
+        trace!("Create genesis using times: {:?}", duration);
 
         self.save(state_db.database())
     }

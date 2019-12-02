@@ -17,6 +17,8 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 use tiny_keccak::keccak256;
 
+use std::time::{Duration, Instant};
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AdminContract {
     pub contracts: BTreeMap<u64, Option<String>>,
@@ -31,7 +33,7 @@ impl Default for AdminContract {
 }
 
 impl AdminContract {
-    pub fn init(&self, str: String, contracts_db: Arc<ContractsDB>) -> [u8; 32] {
+    pub fn init(str: String, contracts_db: Arc<ContractsDB>) {
         let mut a = AdminContract::default();
         a.contracts.insert(0, Some(str));
         let s = serde_json::to_string(&a).unwrap();
@@ -48,8 +50,6 @@ impl AdminContract {
         let str = String::from_utf8(bin_map.unwrap()).unwrap();
         let contracts: AdminContract = serde_json::from_str(&str).unwrap();
         trace!("System contract admin {:?} after init.", contracts);
-
-        keccak256(&s.as_bytes().to_vec())
     }
 
     pub fn get_latest_item(
@@ -57,6 +57,8 @@ impl AdminContract {
         current_height: u64,
         contracts_db: Arc<ContractsDB>,
     ) -> (Option<AdminContract>, Option<Admin>) {
+        let start = Instant::now();
+
         if let Some(latest_store) = contracts_db
             .get(DataCategory::Contracts, b"admin-contract".to_vec())
             .expect("get latest store error")
@@ -80,6 +82,8 @@ impl AdminContract {
             trace!("System contracts latest admin {:?}", latest_item);
             return (Some(contract_map), Some(latest_item));
         }
+        let duration = start.elapsed();
+        trace!("Get latest item using {:?}", duration);
         (None, None)
     }
 }
@@ -189,7 +193,6 @@ impl Admin {
         // only admin can invoke
         if self.only_admin(params.sender) {
             self.admin = param_address;
-            *changed = true;
 
             let mut logs = Vec::new();
             let mut topics = Vec::new();
@@ -201,6 +204,7 @@ impl Admin {
             let log = Log(param_address, topics, vec![]);
             logs.push(log);
 
+            *changed = true;
             return Ok(InterpreterResult::Normal(
                 H256::from(1).0.to_vec(),
                 params.gas_limit,

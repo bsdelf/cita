@@ -19,6 +19,8 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 use tiny_keccak::keccak256;
 
+use std::time::{Duration, Instant};
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NodeStore {
     contracts: BTreeMap<u64, Option<String>>,
@@ -33,7 +35,7 @@ impl Default for NodeStore {
 }
 
 impl NodeStore {
-    pub fn init(&self, str: String, contracts_db: Arc<ContractsDB>) -> [u8; 32] {
+    pub fn init(str: String, contracts_db: Arc<ContractsDB>) {
         let mut a = NodeStore::default();
         a.contracts.insert(0, Some(str));
         let s = serde_json::to_string(&a).unwrap();
@@ -50,8 +52,6 @@ impl NodeStore {
         let str = String::from_utf8(bin_map.unwrap()).unwrap();
         let contracts: NodeStore = serde_json::from_str(&str).unwrap();
         trace!("System contract nodes {:?} after init.", contracts);
-
-        keccak256(&s.as_bytes().to_vec())
     }
 
     pub fn get_latest_item(
@@ -59,6 +59,8 @@ impl NodeStore {
         current_height: u64,
         contracts_db: Arc<ContractsDB>,
     ) -> (Option<NodeStore>, Option<NodeManager>) {
+        let start = Instant::now();
+
         if let Some(nodes_map) = contracts_db
             .get(DataCategory::Contracts, b"nodes-contract".to_vec())
             .expect("get nodes error")
@@ -80,6 +82,8 @@ impl NodeStore {
 
             let latest_item: NodeManager = serde_json::from_str(&(*bin).clone().unwrap()).unwrap();
             trace!("System contracts latest nodes {:?}", latest_item);
+            let duration = start.elapsed();
+            trace!("Time elapsed in expensive_function() is: {:?}", duration);
             return (Some(contract_map), Some(latest_item));
         }
         (None, None)

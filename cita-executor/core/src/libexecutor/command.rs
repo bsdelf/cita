@@ -398,7 +398,9 @@ impl Commander for Executor {
     }
 
     fn call(&self, t: &SignedTransaction, block_tag: BlockTag) -> Result<CitaExecuted, CallError> {
+        trace!("call height is {:?}", block_tag);
         let header = self.block_header(block_tag).ok_or(CallError::StatePruned)?;
+        trace!("call height header  is {:?}", header);
         let last_hashes = self.build_last_hashes(Some(header.hash().unwrap()), header.number());
         let mut context = Context {
             block_number: header.number(),

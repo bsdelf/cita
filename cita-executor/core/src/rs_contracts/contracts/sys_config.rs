@@ -19,25 +19,31 @@ use ethabi::Token;
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 use tiny_keccak::keccak256;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SystemContract {
     contracts: BTreeMap<u64, Option<String>>,
+    latest_item: Option<Sysconfig>,
 }
 
 impl Default for SystemContract {
     fn default() -> Self {
         SystemContract {
             contracts: BTreeMap::new(),
+            latest_item: Some(Sysconfig::default()),
         }
     }
 }
 
 impl SystemContract {
-    pub fn init(&self, str: String, contracts_db: Arc<ContractsDB>) -> [u8; 32] {
+    pub fn init(str: String, contracts_db: Arc<ContractsDB>) {
         let mut a = SystemContract::default();
-        a.contracts.insert(0, Some(str));
+        a.contracts.insert(0, Some(str.clone()));
+        let latest_entry: Sysconfig = serde_json::from_str(&str).unwrap();
+        a.latest_item = Some(latest_entry);
+
         let s = serde_json::to_string(&a).unwrap();
         let _ = contracts_db.insert(
             DataCategory::Contracts,
@@ -52,8 +58,6 @@ impl SystemContract {
         let str = String::from_utf8(bin_map.unwrap()).unwrap();
         let contracts: SystemContract = serde_json::from_str(&str).unwrap();
         trace!("System contract system {:?} after init.", contracts);
-
-        keccak256(&s.as_bytes().to_vec())
     }
 
     pub fn get_latest_item(
@@ -61,29 +65,50 @@ impl SystemContract {
         current_height: u64,
         contracts_db: Arc<ContractsDB>,
     ) -> (Option<SystemContract>, Option<Sysconfig>) {
-        if let Some(price_map) = contracts_db
+        let start = Instant::now();
+        if let Some(system_store) = contracts_db
             .get(DataCategory::Contracts, b"system-contract".to_vec())
             .expect("get contract map error")
         {
-            let s = String::from_utf8(price_map).expect("from vec to string error");
-            let contract_map: SystemContract = serde_json::from_str(&s).unwrap();
+            let mut latest_item = Sysconfig::default();
+
+            let duration = start.elapsed();
+            trace!("read sysconfig from db using: {:?}", duration);
+
+            let start = Instant::now();
+            // let s = String::from_utf8(price_map).expect("from vec to string error"); 38.399µs
+            // let contract_map: SystemContract = serde_json::from_str(&s).unwrap();
+            // let s = String::from_utf8(price_map).expect("from vec to string error");
+            let contract_map: SystemContract = serde_json::from_slice(&system_store).unwrap();
+            let duration = start.elapsed();
+            trace!("Transfer format: {:?}", duration);
+
+            let start = Instant::now();
             trace!("==> lala contract map {:?}", contract_map);
             let map_len = contract_map.contracts.len();
             trace!("==> lala contract map length {:?}", map_len);
             let keys: Vec<_> = contract_map.contracts.keys().collect();
-            let latest_key = get_latest_key(current_height, keys);
+            let latest_key = get_latest_key(current_height, keys.clone());
             trace!("==> lala contract latest key {:?}", latest_key);
 
-            let bin = contract_map
-                .contracts
-                .get(&(current_height as u64))
-                .or(contract_map.contracts.get(&latest_key))
-                .expect("get contract according to height error");
+            if latest_key == *keys[map_len - 1] {
+                trace!("use cached item");
+                latest_item = contract_map.latest_item.clone().unwrap();
+            } else {
+                let bin = contract_map
+                    .contracts
+                    .get(&(current_height as u64))
+                    .or(contract_map.contracts.get(&latest_key))
+                    .expect("get contract according to height error");
+                latest_item = serde_json::from_str(&(*bin).clone().unwrap()).unwrap();
+            }
+            let duration = start.elapsed();
+            trace!("Recover using time: {:?}", duration);
 
-            let latest_item: Sysconfig = serde_json::from_str(&(*bin).clone().unwrap()).unwrap();
             trace!("System contracts latest system {:?}", latest_item);
             return (Some(contract_map), Some(latest_item));
         }
+
         (None, None)
     }
 }
@@ -163,6 +188,7 @@ impl<B: DB> Contract<B> for SystemContract {
                     contract_map
                         .contracts
                         .insert(context.block_number, Some(str));
+                    contract_map.latest_item = Some(new_item);
                     let str = serde_json::to_string(&contract_map).unwrap();
                     let updated_hash = keccak256(&str.as_bytes().to_vec());
                     let _ = contracts_db.insert(
@@ -196,7 +222,7 @@ impl<B: DB> Contract<B> for SystemContract {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Sysconfig {
     delay_block_number: u64,
     check_permission: bool,

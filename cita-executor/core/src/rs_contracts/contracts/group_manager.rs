@@ -42,7 +42,7 @@ impl Default for GroupStore {
 }
 
 impl GroupStore {
-    pub fn init(&self, str: String, contracts_db: Arc<ContractsDB>) -> [u8; 32] {
+    pub fn init(str: String, contracts_db: Arc<ContractsDB>) {
         let mut a = GroupStore::default();
 
         a.contracts.insert(0, Some(str));
@@ -60,8 +60,6 @@ impl GroupStore {
         let str = String::from_utf8(bin_map.unwrap()).unwrap();
         let contracts: GroupStore = serde_json::from_str(&str).unwrap();
         trace!("System contract nodes {:?} after init.", contracts);
-
-        keccak256(&s.as_bytes().to_vec())
     }
 
     pub fn get_latest_item(

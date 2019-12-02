@@ -49,37 +49,23 @@ impl<B: DB> ContractsFactory<B> {
             address,
             contract
         );
-        let mut updated_hash = H256::from(0).0;
         if address == Address::from(reserved_addresses::ADMIN) {
-            updated_hash = self
-                .admin_contract
-                .init(contract, self.contracts_db.clone());
+            AdminContract::init(contract, self.contracts_db.clone());
         } else if address == Address::from(reserved_addresses::PRICE_MANAGEMENT) {
-            updated_hash = self
-                .price_contract
-                .init(contract, self.contracts_db.clone());
+            PriceContract::init(contract, self.contracts_db.clone());
         } else if address == Address::from(reserved_addresses::VERSION_MANAGEMENT) {
-            updated_hash = self
-                .version_contract
-                .init(contract, self.contracts_db.clone());
+            VersionContract::init(contract, self.contracts_db.clone());
         } else if address == Address::from(reserved_addresses::EMERGENCY_INTERVENTION) {
-            updated_hash = self
-                .emerg_contract
-                .init(contract, self.contracts_db.clone());
+            EmergContract::init(contract, self.contracts_db.clone());
         } else if address == Address::from(reserved_addresses::SYS_CONFIG) {
-            updated_hash = self
-                .system_contract
-                .init(contract, self.contracts_db.clone());
+            SystemContract::init(contract, self.contracts_db.clone());
         } else if address == Address::from(reserved_addresses::NODE_MANAGER) {
-            updated_hash = self.nodes_store.init(contract, self.contracts_db.clone());
+            NodeStore::init(contract, self.contracts_db.clone());
         } else if address == Address::from(reserved_addresses::QUOTA_MANAGER) {
-            updated_hash = self
-                .quota_contract
-                .init(contract, self.contracts_db.clone());
+            QuotaContract::init(contract, self.contracts_db.clone());
         } else if address == Address::from(reserved_addresses::GROUP) {
-            updated_hash = self.group_store.init(contract, self.contracts_db.clone());
+            GroupStore::init(contract, self.contracts_db.clone());
         }
-        trace!("===> updated hash {:?}", updated_hash);
         // new a contract account, storage(key = height, value = hash(contracts))
         // let _ =
         //     self.state
@@ -93,8 +79,7 @@ impl<B: DB> ContractsFactory<B> {
 
     pub fn register_perms(&mut self, admin: Address, perm_contracts: BTreeMap<Address, String>) {
         trace!("Register permission contract {:?}", perm_contracts);
-        self.perm_store
-            .init(admin, perm_contracts, self.contracts_db.clone());
+        PermStore::init(admin, perm_contracts, self.contracts_db.clone());
     }
 }
 
@@ -139,6 +124,9 @@ impl<B: DB> ContractsFactory<B> {
         params: &InterpreterParams,
         context: &Context,
     ) -> Result<InterpreterResult, ContractError> {
+        use std::time::{Duration, Instant};
+        let start = Instant::now();
+
         if params.contract.code_address == Address::from(reserved_addresses::ADMIN) {
             return self.admin_contract.execute(
                 &params,
@@ -216,6 +204,8 @@ impl<B: DB> ContractsFactory<B> {
                 self.state.clone(),
             );
         }
+        let duration = start.elapsed();
+        trace!("Exectue this contract using {:?}", duration);
 
         return Err(ContractError::AdminError(String::from(
             "not a valid address",

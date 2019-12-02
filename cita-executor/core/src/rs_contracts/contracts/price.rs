@@ -32,7 +32,7 @@ impl Default for PriceContract {
 }
 
 impl PriceContract {
-    pub fn init(&self, str: String, contracts_db: Arc<ContractsDB>) -> [u8; 32] {
+    pub fn init(str: String, contracts_db: Arc<ContractsDB>) {
         let mut a = PriceContract::default();
         a.contracts.insert(0, Some(str));
         let s = serde_json::to_string(&a).unwrap();
@@ -49,8 +49,6 @@ impl PriceContract {
         let str = String::from_utf8(bin_map.unwrap()).unwrap();
         let contracts: PriceContract = serde_json::from_str(&str).unwrap();
         trace!("System contract price {:?} after init.", contracts);
-
-        keccak256(&s.as_bytes().to_vec())
     }
 
     pub fn get_latest_item(
@@ -66,7 +64,7 @@ impl PriceContract {
             let contract_map: PriceContract = serde_json::from_str(&s).unwrap();
             trace!("==> lala contract map {:?}", contract_map);
             let map_len = contract_map.contracts.len();
-            trace!("==> lala contract map length {:?}", map_len);
+            trace!("==> lala contract map length {:?}, current height {:?}", map_len, current_height);
             let keys: Vec<_> = contract_map.contracts.keys().collect();
             let latest_key = get_latest_key(current_height, keys);
             trace!("==> lala contract latest key {:?}", latest_key);
@@ -98,7 +96,8 @@ impl<B: DB> Contract<B> for PriceContract {
             self.get_latest_item(context.block_number, contracts_db.clone());
         match (contract_map, latest_price) {
             (Some(mut contract_map), Some(mut latest_price)) => {
-                trace!("System contracts - price - params input {:?}", params.input);
+                trace!("System contracts - price - params input {:?}", params);
+                trace!("System contracts - price - params context {:?}", context);
                 let mut updated = false;
                 let result =
                     extract_to_u32(&params.input[..]).and_then(|signature| match signature {
@@ -127,12 +126,12 @@ impl<B: DB> Contract<B> for PriceContract {
                     );
 
                     // debug information, can be ommited
-                    let bin_map = contracts_db
-                        .get(DataCategory::Contracts, b"price-contract".to_vec())
-                        .unwrap();
-                    let str = String::from_utf8(bin_map.unwrap()).unwrap();
-                    let contracts: PriceContract = serde_json::from_str(&str).unwrap();
-                    trace!("System contract price {:?} after update.", contracts);
+                    // let bin_map = contracts_db
+                    //     .get(DataCategory::Contracts, b"price-contract".to_vec())
+                    //     .unwrap();
+                    // let str = String::from_utf8(bin_map.unwrap()).unwrap();
+                    // let contracts: PriceContract = serde_json::from_str(&str).unwrap();
+                    // trace!("System contract price {:?} after update.", contracts);
 
                     // update state
                     let _ = state

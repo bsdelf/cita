@@ -32,7 +32,7 @@ impl Default for VersionContract {
 }
 
 impl VersionContract {
-    pub fn init(&self, str: String, contracts_db: Arc<ContractsDB>) -> [u8; 32] {
+    pub fn init(str: String, contracts_db: Arc<ContractsDB>) {
         let mut a = VersionContract::default();
         a.contracts.insert(0, Some(str));
         let s = serde_json::to_string(&a).unwrap();
@@ -49,8 +49,6 @@ impl VersionContract {
         let str = String::from_utf8(bin_map.unwrap()).unwrap();
         let contracts: VersionContract = serde_json::from_str(&str).unwrap();
         trace!("System contract version {:?} after init.", contracts);
-
-        keccak256(&s.as_bytes().to_vec())
     }
 
     pub fn get_latest_item(

@@ -30,6 +30,8 @@ use common_types::reserved_addresses;
 use ethabi::token::LenientTokenizer;
 use ethabi::token::Tokenizer;
 
+use std::time::{Duration, Instant};
+
 pub type FuncSig = [u8; 4];
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -48,11 +50,10 @@ impl Default for PermStore {
 
 impl PermStore {
     pub fn init(
-        &self,
         admin: Address,
         perm_contracts: BTreeMap<Address, String>,
         contracts_db: Arc<ContractsDB>,
-    ) -> [u8; 32] {
+    ) {
         let mut perm_store = PermStore::default();
 
         let mut perm_manager = PermManager::default();
@@ -96,7 +97,6 @@ impl PermStore {
         // let perm_manager_str = perm_store.contracts.get(&0).unwrap();
         // let perm_manager: PermManager = serde_json::from_str(&*perm_manager_str.unwrap()).unwrap();
         trace!("System contract permission {:?} after init.", perm_store);
-        keccak256(&s.as_bytes().to_vec())
     }
 
     pub fn get_latest_item(
@@ -104,9 +104,7 @@ impl PermStore {
         current_height: u64,
         contracts_db: Arc<ContractsDB>,
     ) -> (Option<PermStore>, Option<PermManager>) {
-        // let mut latest_perm_manager = PermManager::default();
-        // let mut contract_map = PermStore::default();
-
+        let start = Instant::now();
         if let Some(perm_store) = contracts_db
             .get(DataCategory::Contracts, b"permission-contract".to_vec())
             .expect("get permission error")
@@ -133,8 +131,11 @@ impl PermStore {
                 "System contracts latest permission {:?}",
                 latest_perm_manager
             );
+            let duration = start.elapsed();
+            trace!("Time elapsed in expensive_function() is: {:?}", duration);
             return (Some(contract_map), Some(latest_perm_manager));
         }
+
         (None, None)
     }
 }

@@ -32,7 +32,7 @@ impl Default for EmergContract {
 }
 
 impl EmergContract {
-    pub fn init(&self, str: String, contracts_db: Arc<ContractsDB>) -> [u8; 32] {
+    pub fn init(str: String, contracts_db: Arc<ContractsDB>) {
         let mut a = EmergContract::default();
         a.contracts.insert(0, Some(str));
         let s = serde_json::to_string(&a).unwrap();
@@ -52,8 +52,6 @@ impl EmergContract {
             "System contract emergency intervention {:?} after init.",
             contracts
         );
-
-        keccak256(&s.as_bytes().to_vec())
     }
 
     pub fn get_latest_item(
