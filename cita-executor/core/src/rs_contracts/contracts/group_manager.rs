@@ -1,10 +1,10 @@
 use super::utils::{clean_0x, extract_to_u32, get_latest_key};
 
+use cita_types::traits::LowerHex;
 use cita_types::{Address, H256, U256};
 use cita_vm::evm::{InterpreterParams, InterpreterResult, Log};
 use common_types::context::Context;
 use common_types::errors::ContractError;
-use cita_types::traits::LowerHex;
 
 use super::contract::Contract;
 use crate::rs_contracts::contracts::group::Group;
@@ -190,7 +190,7 @@ impl<B: DB> Contract<B> for GroupStore {
                 }
                 return result;
             }
-            _ => unreachable!(),
+            _ => Err(ContractError::Internal("params error".to_owned())),
         }
     }
 }
@@ -287,7 +287,9 @@ impl GroupManager {
             }
         }
 
-        Err(ContractError::Internal("System error".to_owned()))
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn delete_group(
@@ -317,7 +319,9 @@ impl GroupManager {
             }
         }
 
-        return Err(ContractError::Internal("error params".to_owned()));
+        return Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ));
     }
 
     pub fn update_group_name(
@@ -351,7 +355,9 @@ impl GroupManager {
             }
         }
 
-        return Err(ContractError::Internal("error params".to_owned()));
+        return Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ));
     }
 
     pub fn add_accounts(
@@ -404,7 +410,9 @@ impl GroupManager {
                 _ => return Err(ContractError::Internal("error params".to_owned())),
             }
         }
-        Err(ContractError::Internal("error params".to_owned()))
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn delete_accounts(
@@ -457,7 +465,9 @@ impl GroupManager {
                 _ => return Err(ContractError::Internal("error params".to_owned())),
             }
         }
-        Err(ContractError::Internal("error params".to_owned()))
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn query_groups(

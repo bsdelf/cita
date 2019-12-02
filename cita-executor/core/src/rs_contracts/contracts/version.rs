@@ -58,11 +58,11 @@ impl VersionContract {
         current_height: u64,
         contracts_db: Arc<ContractsDB>,
     ) -> (Option<VersionContract>, Option<Version>) {
-        if let Some(price_map) = contracts_db
+        if let Some(latest_store) = contracts_db
             .get(DataCategory::Contracts, b"version-contract".to_vec())
-            .expect("get price error")
+            .expect("get latest store error")
         {
-            let s = String::from_utf8(price_map).expect("from vec to string error");
+            let s = String::from_utf8(latest_store).expect("from vec to string error");
             let contract_map: VersionContract = serde_json::from_str(&s).unwrap();
             trace!("==> lala contract map {:?}", contract_map);
             let map_len = contract_map.contracts.len();
@@ -149,7 +149,7 @@ impl<B: DB> Contract<B> for VersionContract {
                 }
                 return result;
             }
-            _ => unreachable!(),
+            _ => Err(ContractError::Internal("params error".to_owned())),
         }
     }
 }
@@ -187,7 +187,9 @@ impl Version {
             ));
         }
 
-        Err(ContractError::Internal("Only admin can do".to_owned()))
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn get_version(&self) -> Result<InterpreterResult, ContractError> {

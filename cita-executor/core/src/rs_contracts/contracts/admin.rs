@@ -57,14 +57,11 @@ impl AdminContract {
         current_height: u64,
         contracts_db: Arc<ContractsDB>,
     ) -> (Option<AdminContract>, Option<Admin>) {
-        // let mut latest_admin = Admin::default();
-        // let mut contract_map = AdminContract::default();
-
-        if let Some(admin_map) = contracts_db
+        if let Some(latest_store) = contracts_db
             .get(DataCategory::Contracts, b"admin-contract".to_vec())
-            .expect("get admin map error")
+            .expect("get latest store error")
         {
-            let s = String::from_utf8(admin_map).expect("from vec to string error");
+            let s = String::from_utf8(latest_store).expect("from vec to string error");
             let contract_map: AdminContract = serde_json::from_str(&s).unwrap();
             trace!("==> lala contract map {:?}", contract_map);
             let map_len = contract_map.contracts.len();
@@ -79,9 +76,9 @@ impl AdminContract {
                 .or(contract_map.contracts.get(&latest_key))
                 .expect("get contract according to height error");
 
-            let latest_admin: Admin = serde_json::from_str(&(*bin).clone().unwrap()).unwrap();
-            trace!("System contracts latest admin {:?}", latest_admin);
-            return (Some(contract_map), Some(latest_admin));
+            let latest_item: Admin = serde_json::from_str(&(*bin).clone().unwrap()).unwrap();
+            trace!("System contracts latest admin {:?}", latest_item);
+            return (Some(contract_map), Some(latest_item));
         }
         (None, None)
     }
@@ -96,10 +93,10 @@ impl<B: DB> Contract<B> for AdminContract {
         state: Arc<RefCell<State<B>>>,
     ) -> Result<InterpreterResult, ContractError> {
         trace!("System contract - Admin - enter execute");
-        let (contract_map, latest_admin) =
+        let (contract_map, latest_item) =
             self.get_latest_item(context.block_number, contracts_db.clone());
-        match (contract_map, latest_admin) {
-            (Some(mut contract_map), Some(mut latest_admin)) => {
+        match (contract_map, latest_item) {
+            (Some(mut contract_map), Some(mut latest_item)) => {
                 trace!(
                     "System contracts - admin - params {:?}, input {:?}",
                     params.read_only,
@@ -109,16 +106,16 @@ impl<B: DB> Contract<B> for AdminContract {
                 let mut updated = false;
                 let result =
                     extract_to_u32(&params.input[..]).and_then(|signature| match signature {
-                        0xf851a440u32 => latest_admin.get_admin(),
-                        0x24d7806cu32 => latest_admin.is_admin(params),
-                        0x1c1b8772u32 => latest_admin.update(params, &mut updated),
+                        0xf851a440u32 => latest_item.get_admin(),
+                        0x24d7806cu32 => latest_item.is_admin(params),
+                        0x1c1b8772u32 => latest_item.update(params, &mut updated),
                         _ => panic!("Invalid function signature".to_owned()),
                     });
 
                 // update contract db
                 if result.is_ok() && updated {
-                    let new_admin = latest_admin;
-                    let str = serde_json::to_string(&new_admin).unwrap();
+                    let new_item = latest_item;
+                    let str = serde_json::to_string(&new_item).unwrap();
                     contract_map
                         .contracts
                         .insert(context.block_number, Some(str));
@@ -150,7 +147,7 @@ impl<B: DB> Contract<B> for AdminContract {
                 }
                 return result;
             }
-            _ => unreachable!(),
+            _ => Err(ContractError::Internal("params errors".to_owned())),
         }
     }
 }
@@ -211,7 +208,9 @@ impl Admin {
             ));
         }
 
-        Err(ContractError::Internal("Only admin can do".to_owned()))
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     fn is_admin(&self, params: &InterpreterParams) -> Result<InterpreterResult, ContractError> {

@@ -146,7 +146,7 @@ impl<B: DB> Contract<B> for PriceContract {
                 }
                 return result;
             }
-            _ => unreachable!(),
+            _ => Err(ContractError::Internal("params error".to_owned())),
         }
     }
 }
@@ -171,8 +171,7 @@ impl Price {
         trace!("System contract - Price - set_quota_price");
         let param_quota_price = U256::from(&params.input[16..36]);
         // Note: Only admin can change quota price
-        if check::only_admin(params, context, contracts_db.clone())
-            .expect("only admin can invoke price setting")
+        if check::only_admin(params, context, contracts_db.clone()).expect("Not admin")
             && param_quota_price > U256::zero()
         {
             self.quota_price = param_quota_price;
@@ -195,7 +194,9 @@ impl Price {
             ));
         }
 
-        Err(ContractError::Internal("Only admin can do".to_owned()))
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn get_quota_price(&self) -> Result<InterpreterResult, ContractError> {

@@ -5,7 +5,6 @@ use cita_types::H256;
 use cita_vm::evm::{InterpreterParams, InterpreterResult};
 use common_types::context::Context;
 use common_types::errors::ContractError;
-use serde::{Deserialize, Serialize};
 
 use super::contract::Contract;
 use crate::rs_contracts::storage::db_contracts::ContractsDB;
@@ -62,14 +61,11 @@ impl EmergContract {
         current_height: u64,
         contracts_db: Arc<ContractsDB>,
     ) -> (Option<EmergContract>, Option<EmergencyIntervention>) {
-        // let mut latest_item = EmergencyIntervention::default();
-        // let mut contract_map = EmergContract::default();
-
-        if let Some(emerg_map) = contracts_db
+        if let Some(latest_store) = contracts_db
             .get(DataCategory::Contracts, b"emerg-contract".to_vec())
-            .expect("get emerg error")
+            .expect("get latest store error")
         {
-            let s = String::from_utf8(emerg_map).expect("from vec to string error");
+            let s = String::from_utf8(latest_store).expect("from vec to string error");
             let contract_map: EmergContract = serde_json::from_str(&s).unwrap();
             trace!("==> lala contract map {:?}", contract_map);
             let map_len = contract_map.contracts.len();
@@ -154,7 +150,7 @@ impl<B: DB> Contract<B> for EmergContract {
                 }
                 return result;
             }
-            _ => unreachable!(),
+            _ => Err(ContractError::Internal("params error".to_owned())),
         }
     }
 }
@@ -186,8 +182,7 @@ impl EmergencyIntervention {
         let param_state = h256_to_bool(H256::from(&params.input[4..]));
         trace!("param_state {:?}, self.state {:?}", param_state, self.state);
         // Note: Only admin can change quota price
-        if check::only_admin(params, context, contracts_db.clone())
-            .expect("only admin can invoke price setting")
+        if check::only_admin(params, context, contracts_db.clone()).expect("Not admin")
             && param_state != self.state
         {
             self.state = param_state;
@@ -198,7 +193,9 @@ impl EmergencyIntervention {
                 vec![],
             ));
         }
-        Err(ContractError::Internal("Only admin can do".to_owned()))
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn get_state(&self) -> Result<InterpreterResult, ContractError> {

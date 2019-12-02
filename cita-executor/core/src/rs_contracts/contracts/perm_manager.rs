@@ -24,11 +24,11 @@ use std::sync::Arc;
 use tiny_keccak::keccak256;
 
 use crate::cita_executive::create_address_from_address_and_nonce;
+use cita_types::traits::LowerHex;
 use cita_vm::state::StateObjectInfo;
 use common_types::reserved_addresses;
 use ethabi::token::LenientTokenizer;
 use ethabi::token::Tokenizer;
-use cita_types::traits::LowerHex;
 
 pub type FuncSig = [u8; 4];
 
@@ -264,7 +264,7 @@ impl<B: DB> Contract<B> for PermStore {
                 }
                 return result;
             }
-            _ => unreachable!(),
+            _ => Err(ContractError::Internal("params error".to_owned())),
         }
     }
 }
@@ -310,10 +310,8 @@ impl PermManager {
         trace!("System contract - permission  - new permission");
         let new_permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[0]);
         if !self.have_permission(params.sender, new_permission_build_in) {
-            return Ok(InterpreterResult::Normal(
-                H256::from(0).0.to_vec(),
-                params.gas_limit,
-                vec![],
+            return Err(ContractError::Internal(
+                "System contract execute error".to_owned(),
             ));
         }
 
@@ -388,11 +386,9 @@ impl PermManager {
                 _ => unreachable!(),
             }
         }
-        return Ok(InterpreterResult::Normal(
-            H256::from(0).0.to_vec(),
-            params.gas_limit,
-            vec![],
-        ));
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn del_permission(
@@ -409,10 +405,8 @@ impl PermManager {
 
         let delete_permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[1]);
         if !self.have_permission(params.sender, delete_permission_build_in) {
-            return Ok(InterpreterResult::Normal(
-                H256::from(0).0.to_vec(),
-                params.gas_limit,
-                vec![],
+            return Err(ContractError::Internal(
+                "System contract execute error".to_owned(),
             ));
         }
 
@@ -437,11 +431,9 @@ impl PermManager {
             "permission {:?} is build in contracts, can not be deleted.",
             perm_address
         );
-        return Ok(InterpreterResult::Normal(
-            H256::from(0).0.to_vec(),
-            params.gas_limit,
-            vec![],
-        ));
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn update_permission_name(
@@ -458,10 +450,8 @@ impl PermManager {
 
         let permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[2]);
         if !self.have_permission(params.sender, permission_build_in) {
-            return Ok(InterpreterResult::Normal(
-                H256::from(0).0.to_vec(),
-                params.gas_limit,
-                vec![],
+            return Err(ContractError::Internal(
+                "System contract execute error".to_owned(),
             ));
         }
         let perm_address = Address::from(&params.input[16..36]);
@@ -473,21 +463,16 @@ impl PermManager {
         );
         if let Some(perm) = self.perm_collection.get_mut(&perm_address) {
             perm.update_name(&perm_name);
-        } else {
-            warn!("The account not exists");
+            *changed = true;
             return Ok(InterpreterResult::Normal(
-                H256::from(0).0.to_vec(),
+                H256::from(1).0.to_vec(),
                 params.gas_limit,
                 vec![],
             ));
         }
-
-        *changed = true;
-        return Ok(InterpreterResult::Normal(
-            H256::from(1).0.to_vec(),
-            params.gas_limit,
-            vec![],
-        ));
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn add_permission_resources(
@@ -504,10 +489,8 @@ impl PermManager {
 
         let permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[2]);
         if !self.have_permission(params.sender, permission_build_in) {
-            return Ok(InterpreterResult::Normal(
-                H256::from(0).0.to_vec(),
-                params.gas_limit,
-                vec![],
+            return Err(ContractError::Internal(
+                "System contract execute error".to_owned(),
             ));
         }
 
@@ -543,29 +526,20 @@ impl PermManager {
                     );
                     if let Some(p) = self.perm_collection.get_mut(&perm_address) {
                         p.add_resources(perm_conts, perm_funcs);
-                    } else {
-                        warn!("The account not exists");
+                        *changed = true;
                         return Ok(InterpreterResult::Normal(
-                            H256::from(0).0.to_vec(),
+                            H256::from(1).0.to_vec(),
                             params.gas_limit,
                             vec![],
                         ));
                     }
-                    *changed = true;
-                    return Ok(InterpreterResult::Normal(
-                        H256::from(1).0.to_vec(),
-                        params.gas_limit,
-                        vec![],
-                    ));
                 }
                 _ => unreachable!(),
             }
         }
-        return Ok(InterpreterResult::Normal(
-            H256::from(0).0.to_vec(),
-            params.gas_limit,
-            vec![],
-        ));
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn del_permission_resources(
@@ -582,10 +556,8 @@ impl PermManager {
 
         let permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[2]);
         if !self.have_permission(params.sender, permission_build_in) {
-            return Ok(InterpreterResult::Normal(
-                H256::from(0).0.to_vec(),
-                params.gas_limit,
-                vec![],
+            return Err(ContractError::Internal(
+                "System contract execute error".to_owned(),
             ));
         }
 
@@ -621,29 +593,20 @@ impl PermManager {
                     );
                     if let Some(p) = self.perm_collection.get_mut(&perm_address) {
                         p.delete_resources(perm_conts, perm_funcs);
-                    } else {
-                        warn!("The account not exists");
+                        *changed = true;
                         return Ok(InterpreterResult::Normal(
-                            H256::from(0).0.to_vec(),
+                            H256::from(1).0.to_vec(),
                             params.gas_limit,
                             vec![],
                         ));
                     }
-                    *changed = true;
-                    return Ok(InterpreterResult::Normal(
-                        H256::from(1).0.to_vec(),
-                        params.gas_limit,
-                        vec![],
-                    ));
                 }
                 _ => unreachable!(),
             }
         }
-        return Ok(InterpreterResult::Normal(
-            H256::from(0).0.to_vec(),
-            params.gas_limit,
-            vec![],
-        ));
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn set_authorizations(
@@ -660,10 +623,8 @@ impl PermManager {
 
         let permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[3]);
         if !self.have_permission(params.sender, permission_build_in) {
-            return Ok(InterpreterResult::Normal(
-                H256::from(0).0.to_vec(),
-                params.gas_limit,
-                vec![],
+            return Err(ContractError::Internal(
+                "System contract execute error".to_owned(),
             ));
         }
 
@@ -708,11 +669,9 @@ impl PermManager {
                 _ => unreachable!(),
             }
         }
-        return Ok(InterpreterResult::Normal(
-            H256::from(0).0.to_vec(),
-            params.gas_limit,
-            vec![],
-        ));
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn cancel_authorizations(
@@ -726,10 +685,8 @@ impl PermManager {
 
         let permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[4]);
         if !self.have_permission(params.sender, permission_build_in) {
-            return Ok(InterpreterResult::Normal(
-                H256::from(0).0.to_vec(),
-                params.gas_limit,
-                vec![],
+            return Err(ContractError::Internal(
+                "System contract execute error".to_owned(),
             ));
         }
 
@@ -764,23 +721,14 @@ impl PermManager {
                             params.gas_limit,
                             vec![],
                         ));
-                    } else {
-                        warn!("The account not exists");
-                        return Ok(InterpreterResult::Normal(
-                            H256::from(0).0.to_vec(),
-                            params.gas_limit,
-                            vec![],
-                        ));
                     }
                 }
                 _ => unreachable!(),
             }
         }
-        return Ok(InterpreterResult::Normal(
-            H256::from(0).0.to_vec(),
-            params.gas_limit,
-            vec![],
-        ));
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn set_authorization(
@@ -797,10 +745,8 @@ impl PermManager {
 
         let permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[3]);
         if !self.have_permission(params.sender, permission_build_in) {
-            return Ok(InterpreterResult::Normal(
-                H256::from(0).0.to_vec(),
-                params.gas_limit,
-                vec![],
+            return Err(ContractError::Internal(
+                "System contract execute error".to_owned(),
             ));
         }
 
@@ -838,10 +784,8 @@ impl PermManager {
 
         let permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[4]);
         if !self.have_permission(params.sender, permission_build_in) {
-            return Ok(InterpreterResult::Normal(
-                H256::from(0).0.to_vec(),
-                params.gas_limit,
-                vec![],
+            return Err(ContractError::Internal(
+                "System contract execute error".to_owned(),
             ));
         }
 
@@ -857,11 +801,9 @@ impl PermManager {
                 vec![],
             ));
         }
-        return Ok(InterpreterResult::Normal(
-            H256::from(0).0.to_vec(),
-            params.gas_limit,
-            vec![],
-        ));
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn clear_authorization(
@@ -875,10 +817,8 @@ impl PermManager {
 
         let permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[4]);
         if !self.have_permission(params.sender, permission_build_in) {
-            return Ok(InterpreterResult::Normal(
-                H256::from(0).0.to_vec(),
-                params.gas_limit,
-                vec![],
+            return Err(ContractError::Internal(
+                "System contract execute error".to_owned(),
             ));
         }
 
@@ -892,11 +832,9 @@ impl PermManager {
                 vec![],
             ));
         }
-        return Ok(InterpreterResult::Normal(
-            H256::from(0).0.to_vec(),
-            params.gas_limit,
-            vec![],
-        ));
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn query_permssions(

@@ -163,7 +163,9 @@ impl<B: DB> Contract<B> for NodeStore {
                 }
                 return result;
             }
-            _ => unreachable!(),
+            _ => Err(ContractError::Internal(
+                "System contract execute error".to_owned(),
+            )),
         }
     }
 }
@@ -198,9 +200,7 @@ impl NodeManager {
         contracts_db: Arc<ContractsDB>,
     ) -> Result<InterpreterResult, ContractError> {
         trace!("Node contract set_stake, params {:?}", params.input);
-        if check::only_admin(params, context, contracts_db.clone())
-            .expect("only admin can invoke price setting")
-        {
+        if check::only_admin(params, context, contracts_db.clone()).expect("Not admin") {
             let param_address = Address::from_slice(&params.input[16..36]);
             let param_stake = U256::from(20);
             trace!("param address decoded is {:?}", param_address);
@@ -214,12 +214,11 @@ impl NodeManager {
                     params.gas_limit,
                     vec![],
                 ));
-            } else {
-                warn!("the address not in nodes list.");
-                return Err(ContractError::Internal("Only admin can do".to_owned()));
             }
         }
-        Err(ContractError::Internal("Only admin can do".to_owned()))
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn approve_node(
@@ -230,9 +229,7 @@ impl NodeManager {
         contracts_db: Arc<ContractsDB>,
     ) -> Result<InterpreterResult, ContractError> {
         trace!("Node contract approve_node, params {:?}", params.input);
-        if check::only_admin(params, context, contracts_db.clone())
-            .expect("only admin can invoke price setting")
-        {
+        if check::only_admin(params, context, contracts_db.clone()).expect("Not admin") {
             let param_address = Address::from_slice(&params.input[16..36]);
             if !*self.status.get(&param_address).unwrap_or(&false) {
                 self.status.insert(param_address, true);
@@ -246,7 +243,9 @@ impl NodeManager {
                 ));
             }
         }
-        Err(ContractError::Internal("Only admin can do".to_owned()))
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn delete_node(
@@ -257,9 +256,7 @@ impl NodeManager {
         contracts_db: Arc<ContractsDB>,
     ) -> Result<InterpreterResult, ContractError> {
         trace!("Node contract delete_node, params {:?}", params.input);
-        if check::only_admin(params, context, contracts_db.clone())
-            .expect("only admin can invoke price setting")
-        {
+        if check::only_admin(params, context, contracts_db.clone()).expect("Not admin") {
             let param_address = Address::from_slice(&params.input[16..36]);
             if *self.status.get(&param_address).unwrap_or(&false) {
                 self.nodes.retain(|&n| n != param_address);
@@ -277,7 +274,9 @@ impl NodeManager {
                 ));
             }
         }
-        Err(ContractError::Internal("Only admin can do".to_owned()))
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn list_nodes(

@@ -191,7 +191,7 @@ impl<B: DB> Contract<B> for SystemContract {
                 }
                 return result;
             }
-            _ => unreachable!(),
+            _ => Err(ContractError::Internal("params error".to_owned())),
         }
     }
 }
@@ -269,9 +269,7 @@ impl Sysconfig {
             "System contract system set_chain_name, params {:?}",
             params.input
         );
-        if check::only_admin(params, context, contracts_db.clone())
-            .expect("only admin can invoke price setting")
-        {
+        if check::only_admin(params, context, contracts_db.clone()).expect("Not admin") {
             if let Ok(param) = ethabi::decode(&[ParamType::String], &params.input[4..]) {
                 let param_chain_name = match &param[0] {
                     Token::String(s) => s,
@@ -287,7 +285,9 @@ impl Sysconfig {
             }
         }
 
-        Err(ContractError::Internal("Only admin can do".to_owned()))
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn set_operator(
@@ -301,9 +301,7 @@ impl Sysconfig {
             "System contract - system - set_operator, params {:?}",
             params.input
         );
-        if check::only_admin(params, context, contracts_db.clone())
-            .expect("only admin can invoke price setting")
-        {
+        if check::only_admin(params, context, contracts_db.clone()).expect("Not admin") {
             if let Ok(param) = ethabi::decode(&[ParamType::String], &params.input[4..]) {
                 let param_operator = match &param[0] {
                     Token::String(s) => s,
@@ -318,7 +316,9 @@ impl Sysconfig {
                 ));
             }
         }
-        Err(ContractError::Internal("Only admin can do".to_owned()))
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn set_website(
@@ -332,15 +332,13 @@ impl Sysconfig {
             "System contract - system - set_website, params {:?}",
             params.input
         );
-        if check::only_admin(params, context, contracts_db.clone())
-            .expect("only admin can invoke price setting")
-        {
+        if check::only_admin(params, context, contracts_db.clone()).expect("Not admin") {
             if let Ok(param) = ethabi::decode(&[ParamType::String], &params.input[4..]) {
                 let param_website = match &param[0] {
                     Token::String(s) => s,
                     _ => unreachable!(),
                 };
-                self.chain_name = encode_string(&param_website);
+                self.website = encode_string(&param_website);
                 *changed = true;
                 return Ok(InterpreterResult::Normal(
                     H256::from(1).0.to_vec(),
@@ -349,7 +347,9 @@ impl Sysconfig {
                 ));
             }
         }
-        Err(ContractError::Internal("Only admin can do".to_owned()))
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     pub fn set_block_interval(
@@ -363,9 +363,7 @@ impl Sysconfig {
             "System contract - system - set_block_interval, params {:?}",
             params.input
         );
-        if check::only_admin(params, context, contracts_db.clone())
-            .expect("only admin can invoke price setting")
-        {
+        if check::only_admin(params, context, contracts_db.clone()).expect("Not admin") {
             let param = U256::from(&params.input[4..]);
             self.block_interval = param.as_u64();
             *changed = true;
@@ -375,7 +373,9 @@ impl Sysconfig {
                 vec![],
             ));
         }
-        Err(ContractError::Internal("Only admin can do".to_owned()))
+        Err(ContractError::Internal(
+            "System contract execute error".to_owned(),
+        ))
     }
 
     // pub fn update_to_chain_id_v1(
@@ -389,7 +389,7 @@ impl Sysconfig {
     //         "System contract - system - update_to_chain_id_v1, params {:?}",
     //         params.input
     //     );
-    //     Err(ContractError::Internal("Only admin can do".to_owned()))
+    //     Err(ContractError::Internal("System contract execute error".to_owned()))
     // }
 
     pub fn get_permission_check(
