@@ -8,6 +8,7 @@ use common_types::errors::ContractError;
 
 use super::contract::Contract;
 use crate::rs_contracts::contracts::build_in_perm;
+use crate::rs_contracts::contracts::group_manager::GroupStore;
 use crate::rs_contracts::contracts::perm::Permission;
 use crate::rs_contracts::storage::db_contracts::ContractsDB;
 use crate::rs_contracts::storage::db_trait::DataBase;
@@ -346,13 +347,18 @@ impl PermManager {
         &mut self,
         params: &InterpreterParams,
         changed: &mut bool,
-        _context: &Context,
-        _contracts_db: Arc<ContractsDB>,
+        context: &Context,
+        contracts_db: Arc<ContractsDB>,
         state: Arc<RefCell<State<B>>>,
     ) -> Result<InterpreterResult, ContractError> {
         trace!("System contract - permission  - new permission");
         let new_permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[0]);
-        if !self.have_permission(params.sender, new_permission_build_in) {
+        if !self.have_permission(
+            params.sender,
+            new_permission_build_in,
+            context,
+            contracts_db.clone(),
+        ) {
             return Err(ContractError::Internal(
                 "System contract execute error".to_owned(),
             ));
@@ -438,8 +444,8 @@ impl PermManager {
         &mut self,
         params: &InterpreterParams,
         changed: &mut bool,
-        _context: &Context,
-        _contracts_db: Arc<ContractsDB>,
+        context: &Context,
+        contracts_db: Arc<ContractsDB>,
     ) -> Result<InterpreterResult, ContractError> {
         trace!(
             "System contract - permission  - del permission, input {:?}",
@@ -447,7 +453,12 @@ impl PermManager {
         );
 
         let delete_permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[1]);
-        if !self.have_permission(params.sender, delete_permission_build_in) {
+        if !self.have_permission(
+            params.sender,
+            delete_permission_build_in,
+            context,
+            contracts_db.clone(),
+        ) {
             return Err(ContractError::Internal(
                 "System contract execute error".to_owned(),
             ));
@@ -483,8 +494,8 @@ impl PermManager {
         &mut self,
         params: &InterpreterParams,
         changed: &mut bool,
-        _context: &Context,
-        _contracts_db: Arc<ContractsDB>,
+        context: &Context,
+        contracts_db: Arc<ContractsDB>,
     ) -> Result<InterpreterResult, ContractError> {
         trace!(
             "System contract - permission  - update permission name, input {:?}",
@@ -492,7 +503,12 @@ impl PermManager {
         );
 
         let permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[2]);
-        if !self.have_permission(params.sender, permission_build_in) {
+        if !self.have_permission(
+            params.sender,
+            permission_build_in,
+            context,
+            contracts_db.clone(),
+        ) {
             return Err(ContractError::Internal(
                 "System contract execute error".to_owned(),
             ));
@@ -522,8 +538,8 @@ impl PermManager {
         &mut self,
         params: &InterpreterParams,
         changed: &mut bool,
-        _context: &Context,
-        _contracts_db: Arc<ContractsDB>,
+        context: &Context,
+        contracts_db: Arc<ContractsDB>,
     ) -> Result<InterpreterResult, ContractError> {
         trace!(
             "System contract - permission  - add_permission_resource, input {:?}",
@@ -531,7 +547,12 @@ impl PermManager {
         );
 
         let permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[2]);
-        if !self.have_permission(params.sender, permission_build_in) {
+        if !self.have_permission(
+            params.sender,
+            permission_build_in,
+            context,
+            contracts_db.clone(),
+        ) {
             return Err(ContractError::Internal(
                 "System contract execute error".to_owned(),
             ));
@@ -589,8 +610,8 @@ impl PermManager {
         &mut self,
         params: &InterpreterParams,
         changed: &mut bool,
-        _context: &Context,
-        _contracts_db: Arc<ContractsDB>,
+        context: &Context,
+        contracts_db: Arc<ContractsDB>,
     ) -> Result<InterpreterResult, ContractError> {
         trace!(
             "System contract - permission  - del_permission_resource, input {:?}",
@@ -598,7 +619,12 @@ impl PermManager {
         );
 
         let permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[2]);
-        if !self.have_permission(params.sender, permission_build_in) {
+        if !self.have_permission(
+            params.sender,
+            permission_build_in,
+            context,
+            contracts_db.clone(),
+        ) {
             return Err(ContractError::Internal(
                 "System contract execute error".to_owned(),
             ));
@@ -656,8 +682,8 @@ impl PermManager {
         &mut self,
         params: &InterpreterParams,
         changed: &mut bool,
-        _context: &Context,
-        _contracts_db: Arc<ContractsDB>,
+        context: &Context,
+        contracts_db: Arc<ContractsDB>,
     ) -> Result<InterpreterResult, ContractError> {
         trace!(
             "System contract - permission  - set_authorizations, input {:?}",
@@ -665,7 +691,12 @@ impl PermManager {
         );
 
         let permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[3]);
-        if !self.have_permission(params.sender, permission_build_in) {
+        if !self.have_permission(
+            params.sender,
+            permission_build_in,
+            context,
+            contracts_db.clone(),
+        ) {
             return Err(ContractError::Internal(
                 "System contract execute error".to_owned(),
             ));
@@ -721,13 +752,18 @@ impl PermManager {
         &mut self,
         params: &InterpreterParams,
         changed: &mut bool,
-        _context: &Context,
-        _contracts_db: Arc<ContractsDB>,
+        context: &Context,
+        contracts_db: Arc<ContractsDB>,
     ) -> Result<InterpreterResult, ContractError> {
         trace!("System contract - permission  - cancel_authorizations");
 
         let permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[4]);
-        if !self.have_permission(params.sender, permission_build_in) {
+        if !self.have_permission(
+            params.sender,
+            permission_build_in,
+            context,
+            contracts_db.clone(),
+        ) {
             return Err(ContractError::Internal(
                 "System contract execute error".to_owned(),
             ));
@@ -778,8 +814,8 @@ impl PermManager {
         &mut self,
         params: &InterpreterParams,
         changed: &mut bool,
-        _context: &Context,
-        _contracts_db: Arc<ContractsDB>,
+        context: &Context,
+        contracts_db: Arc<ContractsDB>,
     ) -> Result<InterpreterResult, ContractError> {
         trace!(
             "System contract - permission  - set_authorization, input {:?}",
@@ -787,7 +823,12 @@ impl PermManager {
         );
 
         let permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[3]);
-        if !self.have_permission(params.sender, permission_build_in) {
+        if !self.have_permission(
+            params.sender,
+            permission_build_in,
+            context,
+            contracts_db.clone(),
+        ) {
             return Err(ContractError::Internal(
                 "System contract execute error".to_owned(),
             ));
@@ -820,13 +861,18 @@ impl PermManager {
         &mut self,
         params: &InterpreterParams,
         changed: &mut bool,
-        _context: &Context,
-        _contracts_db: Arc<ContractsDB>,
+        context: &Context,
+        contracts_db: Arc<ContractsDB>,
     ) -> Result<InterpreterResult, ContractError> {
         trace!("System contract - permission  - cancel_authorization");
 
         let permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[4]);
-        if !self.have_permission(params.sender, permission_build_in) {
+        if !self.have_permission(
+            params.sender,
+            permission_build_in,
+            context,
+            contracts_db.clone(),
+        ) {
             return Err(ContractError::Internal(
                 "System contract execute error".to_owned(),
             ));
@@ -853,13 +899,18 @@ impl PermManager {
         &mut self,
         params: &InterpreterParams,
         changed: &mut bool,
-        _context: &Context,
-        _contracts_db: Arc<ContractsDB>,
+        context: &Context,
+        contracts_db: Arc<ContractsDB>,
     ) -> Result<InterpreterResult, ContractError> {
         trace!("System contract - permission  - clear_authorization");
 
         let permission_build_in = Address::from(build_in_perm::BUILD_IN_PERMS[4]);
-        if !self.have_permission(params.sender, permission_build_in) {
+        if !self.have_permission(
+            params.sender,
+            permission_build_in,
+            context,
+            contracts_db.clone(),
+        ) {
             return Err(ContractError::Internal(
                 "System contract execute error".to_owned(),
             ));
@@ -1090,11 +1141,30 @@ impl PermManager {
         }
     }
 
-    fn have_permission(&self, sender: Address, perm_address: Address) -> bool {
-        let b = self
-            .account_own_perms
-            .get(&sender)
-            .map_or(false, |p| p.contains(&perm_address));
-        b
+    fn have_permission(
+        &self,
+        sender: Address,
+        perm_address: Address,
+        context: &Context,
+        contracts_db: Arc<ContractsDB>,
+    ) -> bool {
+        if let Some(perms) = self.account_own_perms.get(&sender) {
+            // check sender
+            if perms.contains(&perm_address) {
+                return true;
+            }
+        } else if let Some(groups) =
+            GroupStore::get_account_groups(sender, context, contracts_db.clone())
+        {
+            // check group
+            for g in groups.iter() {
+                if let Some(perms) = self.account_own_perms.get(&g) {
+                    if perms.contains(&perm_address) {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
     }
 }

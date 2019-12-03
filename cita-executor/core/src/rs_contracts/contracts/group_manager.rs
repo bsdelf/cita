@@ -63,7 +63,6 @@ impl GroupStore {
     }
 
     pub fn get_latest_item(
-        &self,
         current_height: u64,
         contracts_db: Arc<ContractsDB>,
     ) -> (Option<GroupStore>, Option<GroupManager>) {
@@ -95,6 +94,26 @@ impl GroupStore {
         }
         (None, None)
     }
+
+    pub fn get_account_groups(
+        account: Address,
+        context: &Context,
+        contracts_db: Arc<ContractsDB>,
+    ) -> Option<Vec<Address>> {
+        let mut groups = Vec::new();
+        match GroupStore::get_latest_item(context.block_number, contracts_db.clone()) {
+            (_, Some(mut latest_group_manager)) => {
+                for (addr, entry) in latest_group_manager.groups.iter() {
+                    if entry.in_group(account) {
+                        groups.push(*addr);
+                    }
+                }
+                return Some(groups);
+            }
+            _ => unreachable!(),
+        }
+        None
+    }
 }
 
 impl<B: DB> Contract<B> for GroupStore {
@@ -107,7 +126,7 @@ impl<B: DB> Contract<B> for GroupStore {
     ) -> Result<InterpreterResult, ContractError> {
         trace!("System contract - group - enter execute");
         let (contract_map, latest_group_manager) =
-            self.get_latest_item(context.block_number, contracts_db.clone());
+            GroupStore::get_latest_item(context.block_number, contracts_db.clone());
         match (contract_map, latest_group_manager) {
             (Some(mut contract_map), Some(mut latest_group_manager)) => {
                 trace!("System contracts - group - params input {:?}", params.input);
