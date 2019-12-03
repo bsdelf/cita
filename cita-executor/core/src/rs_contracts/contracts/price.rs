@@ -118,24 +118,7 @@ impl<B: DB> Contract<B> for PriceContract {
                 if result.is_ok() & updated {
                     let new_price = latest_price;
                     let str = serde_json::to_string(&new_price).unwrap();
-                    contract_map
-                        .contracts
-                        .insert(context.block_number, Some(str));
-                    let str = serde_json::to_string(&contract_map).unwrap();
                     let updated_hash = keccak256(&str.as_bytes().to_vec());
-                    let _ = contracts_db.insert(
-                        DataCategory::Contracts,
-                        b"price-contract".to_vec(),
-                        str.as_bytes().to_vec(),
-                    );
-
-                    // debug information, can be ommited
-                    // let bin_map = contracts_db
-                    //     .get(DataCategory::Contracts, b"price-contract".to_vec())
-                    //     .unwrap();
-                    // let str = String::from_utf8(bin_map.unwrap()).unwrap();
-                    // let contracts: PriceContract = serde_json::from_str(&str).unwrap();
-                    // trace!("System contract price {:?} after update.", contracts);
 
                     // update state
                     let _ = state
@@ -146,6 +129,24 @@ impl<B: DB> Contract<B> for PriceContract {
                             H256::from(updated_hash),
                         )
                         .expect("state set storage error");
+                    contract_map
+                        .contracts
+                        .insert(context.block_number, Some(str));
+
+                    let map_str = serde_json::to_string(&contract_map).unwrap();
+                    let _ = contracts_db.insert(
+                        DataCategory::Contracts,
+                        b"price-contract".to_vec(),
+                        map_str.as_bytes().to_vec(),
+                    );
+
+                    // debug information, can be ommited
+                    // let bin_map = contracts_db
+                    //     .get(DataCategory::Contracts, b"price-contract".to_vec())
+                    //     .unwrap();
+                    // let str = String::from_utf8(bin_map.unwrap()).unwrap();
+                    // let contracts: PriceContract = serde_json::from_str(&str).unwrap();
+                    // trace!("System contract price {:?} after update.", contracts);
                 }
                 return result;
             }

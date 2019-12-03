@@ -157,24 +157,7 @@ impl<B: DB> Contract<B> for GroupStore {
                 if result.is_ok() & updated {
                     let new_item = latest_group_manager;
                     let str = serde_json::to_string(&new_item).unwrap();
-                    contract_map
-                        .contracts
-                        .insert(context.block_number, Some(str));
-                    let str = serde_json::to_string(&contract_map).unwrap();
                     let updated_hash = keccak256(&str.as_bytes().to_vec());
-                    let _ = contracts_db.insert(
-                        DataCategory::Contracts,
-                        b"group-contract".to_vec(),
-                        str.as_bytes().to_vec(),
-                    );
-
-                    // debug information, can be ommited
-                    // let bin_map = contracts_db
-                    //     .get(DataCategory::Contracts, b"group-contract".to_vec())
-                    //     .unwrap();
-                    // let str = String::from_utf8(bin_map.unwrap()).unwrap();
-                    // let contracts: GroupStore = serde_json::from_str(&str).unwrap();
-                    // trace!("System contract group {:?} after update.", contracts);
 
                     // update state
                     let _ = state
@@ -185,6 +168,24 @@ impl<B: DB> Contract<B> for GroupStore {
                             H256::from(updated_hash),
                         )
                         .expect("state set storage error");
+                    contract_map
+                        .contracts
+                        .insert(context.block_number, Some(str));
+
+                    let map_str = serde_json::to_string(&contract_map).unwrap();
+                    let _ = contracts_db.insert(
+                        DataCategory::Contracts,
+                        b"group-contract".to_vec(),
+                        map_str.as_bytes().to_vec(),
+                    );
+
+                    // debug information, can be ommited
+                    // let bin_map = contracts_db
+                    //     .get(DataCategory::Contracts, b"group-contract".to_vec())
+                    //     .unwrap();
+                    // let str = String::from_utf8(bin_map.unwrap()).unwrap();
+                    // let contracts: GroupStore = serde_json::from_str(&str).unwrap();
+                    // trace!("System contract group {:?} after update.", contracts);
                 }
                 return result;
             }
