@@ -354,7 +354,7 @@ impl<'a> GenesisCreator<'a> {
                         self.accounts.insert((*address).clone(), account);
                     }
                 }
-            } else if *contract_name == "EmergencyIntervention" {
+            } else if *contract_name == "EmergencyIntervention" || *contract_name == "AutoExec" {
                 continue;
             } else if let Some(account) = Miner::mine(input_data) {
                 self.accounts.insert((*address).clone(), account);

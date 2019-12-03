@@ -10,6 +10,7 @@ use common_types::context::Context;
 use std::sync::Arc;
 
 use crate::rs_contracts::contracts::admin::AdminContract;
+use crate::rs_contracts::contracts::auto_exec::AutoContract;
 use crate::rs_contracts::contracts::contract::Contract;
 use crate::rs_contracts::contracts::emergency_intervention::EmergContract;
 use crate::rs_contracts::contracts::group_manager::GroupStore;
@@ -39,6 +40,7 @@ pub struct ContractsFactory<B> {
     quota_contract: QuotaContract,
     version_contract: VersionContract,
     group_store: GroupStore,
+    auto_exec_contract: AutoContract,
 }
 
 impl<B: DB> ContractsFactory<B> {
@@ -64,16 +66,9 @@ impl<B: DB> ContractsFactory<B> {
             QuotaContract::init(contract, self.contracts_db.clone());
         } else if address == Address::from(reserved_addresses::GROUP) {
             GroupStore::init(contract, self.contracts_db.clone());
+        } else if address == Address::from(reserved_addresses::AUTO_EXEC) {
+            AutoContract::init(contract, self.contracts_db.clone());
         }
-        // new a contract account, storage(key = height, value = hash(contracts))
-        // let _ =
-        //     self.state
-        //         .borrow_mut()
-        //         .new_contract(&address, U256::from(0), U256::from(0), vec![]);
-        // let _ =
-        //     self.state
-        //         .borrow_mut()
-        //         .set_storage(&address, H256::from(0), H256::from(updated_hash));
     }
 
     pub fn register_perms(&mut self, admin: Address, perm_contracts: BTreeMap<Address, String>) {
@@ -82,7 +77,7 @@ impl<B: DB> ContractsFactory<B> {
     }
 }
 
-impl<B: DB> ContractsFactory<B> {
+impl<B: DB + 'static> ContractsFactory<B> {
     pub fn new(state: Arc<RefCell<State<B>>>, contracts_db: Arc<ContractsDB>) -> Self {
         ContractsFactory {
             state: state,
@@ -96,6 +91,7 @@ impl<B: DB> ContractsFactory<B> {
             quota_contract: QuotaContract::default(),
             version_contract: VersionContract::default(),
             group_store: GroupStore::default(),
+            auto_exec_contract: AutoContract::default(),
         }
     }
 
@@ -111,6 +107,7 @@ impl<B: DB> ContractsFactory<B> {
             || *addr == Address::from(reserved_addresses::VERSION_MANAGEMENT)
             || *addr == Address::from(reserved_addresses::GROUP)
             || *addr == Address::from(reserved_addresses::GROUP_MANAGEMENT)
+            || *addr == Address::from(reserved_addresses::AUTO_EXEC)
             || is_permssion_contract(*addr)
         {
             return true;
@@ -166,6 +163,13 @@ impl<B: DB> ContractsFactory<B> {
             );
         } else if params.contract.code_address == Address::from(reserved_addresses::NODE_MANAGER) {
             return self.nodes_store.execute(
+                &params,
+                context,
+                self.contracts_db.clone(),
+                self.state.clone(),
+            );
+        } else if params.contract.code_address == Address::from(reserved_addresses::AUTO_EXEC) {
+            return self.auto_exec_contract.execute(
                 &params,
                 context,
                 self.contracts_db.clone(),
