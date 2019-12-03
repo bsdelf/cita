@@ -88,15 +88,15 @@ impl PermStore {
         );
 
         // debug info
-        let perm_store_bin = contracts_db
-            .get(DataCategory::Contracts, b"permission-contract".to_vec())
-            .unwrap();
-        let perm_store_str = String::from_utf8(perm_store_bin.unwrap()).unwrap();
-        let perm_store: PermStore = serde_json::from_str(&perm_store_str).unwrap();
+        // let perm_store_bin = contracts_db
+        //     .get(DataCategory::Contracts, b"permission-contract".to_vec())
+        //     .unwrap();
+        // let perm_store_str = String::from_utf8(perm_store_bin.unwrap()).unwrap();
+        // let perm_store: PermStore = serde_json::from_str(&perm_store_str).unwrap();
 
         // let perm_manager_str = perm_store.contracts.get(&0).unwrap();
         // let perm_manager: PermManager = serde_json::from_str(&*perm_manager_str.unwrap()).unwrap();
-        trace!("System contract permission {:?} after init.", perm_store);
+        // trace!("System contract permission {:?} after init.", perm_store);
     }
 
     pub fn get_latest_item(
@@ -246,12 +246,12 @@ impl<B: DB> Contract<B> for PermStore {
                     );
 
                     // debug information, can be ommited
-                    let bin_map = contracts_db
-                        .get(DataCategory::Contracts, b"permission-contract".to_vec())
-                        .unwrap();
-                    let str = String::from_utf8(bin_map.unwrap()).unwrap();
-                    let contracts: PermStore = serde_json::from_str(&str).unwrap();
-                    trace!("System contract permission {:?} after update.", contracts);
+                    // let bin_map = contracts_db
+                    //     .get(DataCategory::Contracts, b"permission-contract".to_vec())
+                    //     .unwrap();
+                    // let str = String::from_utf8(bin_map.unwrap()).unwrap();
+                    // let contracts: PermStore = serde_json::from_str(&str).unwrap();
+                    // trace!("System contract permission {:?} after update.", contracts);
 
                     // update state
                     let _ = state

@@ -43,12 +43,12 @@ impl VersionContract {
         );
 
         // debug info
-        let bin_map = contracts_db
-            .get(DataCategory::Contracts, b"version-contract".to_vec())
-            .unwrap();
-        let str = String::from_utf8(bin_map.unwrap()).unwrap();
-        let contracts: VersionContract = serde_json::from_str(&str).unwrap();
-        trace!("System contract version {:?} after init.", contracts);
+        // let bin_map = contracts_db
+        //     .get(DataCategory::Contracts, b"version-contract".to_vec())
+        //     .unwrap();
+        // let str = String::from_utf8(bin_map.unwrap()).unwrap();
+        // let contracts: VersionContract = serde_json::from_str(&str).unwrap();
+        // trace!("System contract version {:?} after init.", contracts);
     }
 
     pub fn get_latest_item(
@@ -128,12 +128,12 @@ impl<B: DB> Contract<B> for VersionContract {
                     );
 
                     // debug information, can be ommited
-                    let bin_map = contracts_db
-                        .get(DataCategory::Contracts, b"version-contract".to_vec())
-                        .unwrap();
-                    let str = String::from_utf8(bin_map.unwrap()).unwrap();
-                    let contracts: VersionContract = serde_json::from_str(&str).unwrap();
-                    trace!("System contract version {:?} after update.", contracts);
+                    // let bin_map = contracts_db
+                    //     .get(DataCategory::Contracts, b"version-contract".to_vec())
+                    //     .unwrap();
+                    // let str = String::from_utf8(bin_map.unwrap()).unwrap();
+                    // let contracts: VersionContract = serde_json::from_str(&str).unwrap();
+                    // trace!("System contract version {:?} after update.", contracts);
 
                     // update state
                     let _ = state

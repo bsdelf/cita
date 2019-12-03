@@ -46,12 +46,12 @@ impl NodeStore {
         );
 
         // debug info
-        let bin_map = contracts_db
-            .get(DataCategory::Contracts, b"nodes-contract".to_vec())
-            .unwrap();
-        let str = String::from_utf8(bin_map.unwrap()).unwrap();
-        let contracts: NodeStore = serde_json::from_str(&str).unwrap();
-        trace!("System contract nodes {:?} after init.", contracts);
+        // let bin_map = contracts_db
+        //     .get(DataCategory::Contracts, b"nodes-contract".to_vec())
+        //     .unwrap();
+        // let str = String::from_utf8(bin_map.unwrap()).unwrap();
+        // let contracts: NodeStore = serde_json::from_str(&str).unwrap();
+        // trace!("System contract nodes {:?} after init.", contracts);
     }
 
     pub fn get_latest_item(
@@ -147,12 +147,12 @@ impl<B: DB> Contract<B> for NodeStore {
                     );
 
                     // debug information, can be ommited
-                    let bin_map = contracts_db
-                        .get(DataCategory::Contracts, b"nodes-contract".to_vec())
-                        .unwrap();
-                    let str = String::from_utf8(bin_map.unwrap()).unwrap();
-                    let contracts: NodeStore = serde_json::from_str(&str).unwrap();
-                    trace!("System contract nodes {:?} after update.", contracts);
+                    // let bin_map = contracts_db
+                    //     .get(DataCategory::Contracts, b"nodes-contract".to_vec())
+                    //     .unwrap();
+                    // let str = String::from_utf8(bin_map.unwrap()).unwrap();
+                    // let contracts: NodeStore = serde_json::from_str(&str).unwrap();
+                    // trace!("System contract nodes {:?} after update.", contracts);
 
                     // update state
                     let _ = state
@@ -292,6 +292,7 @@ impl NodeManager {
             .iter()
             .map(|i| Token::Address(i.0))
             .collect::<Vec<ethabi::Token>>();
+        trace!("list nodes is {:?}", nodes);
         let mut tokens = Vec::new();
         tokens.push(ethabi::Token::Array(nodes));
         return Ok(InterpreterResult::Normal(
@@ -311,6 +312,7 @@ impl NodeManager {
         for (_key, value) in self.stakes.iter() {
             stakes.push(Token::Uint(H256::from(value).0));
         }
+        trace!("list stakes is {:?}", stakes);
         tokens.push(ethabi::Token::Array(stakes));
         return Ok(InterpreterResult::Normal(
             ethabi::encode(&tokens),

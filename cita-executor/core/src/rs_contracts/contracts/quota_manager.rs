@@ -50,12 +50,12 @@ impl QuotaContract {
         );
 
         // debug info
-        let bin_map = contracts_db
-            .get(DataCategory::Contracts, b"quota-contract".to_vec())
-            .unwrap();
-        let str = String::from_utf8(bin_map.unwrap()).unwrap();
-        let contracts: QuotaContract = serde_json::from_str(&str).unwrap();
-        trace!("System contract quota {:?} after init.", contracts);
+        // let bin_map = contracts_db
+        //     .get(DataCategory::Contracts, b"quota-contract".to_vec())
+        //     .unwrap();
+        // let str = String::from_utf8(bin_map.unwrap()).unwrap();
+        // let contracts: QuotaContract = serde_json::from_str(&str).unwrap();
+        // trace!("System contract quota {:?} after init.", contracts);
     }
 
     pub fn get_latest_item(
@@ -143,12 +143,12 @@ impl<B: DB> Contract<B> for QuotaContract {
                     );
 
                     // debug information, can be ommited
-                    let bin_map = contracts_db
-                        .get(DataCategory::Contracts, b"quota-contract".to_vec())
-                        .unwrap();
-                    let str = String::from_utf8(bin_map.unwrap()).unwrap();
-                    let contracts: QuotaContract = serde_json::from_str(&str).unwrap();
-                    trace!("System contract quota {:?} after update.", contracts);
+                    // let bin_map = contracts_db
+                    //     .get(DataCategory::Contracts, b"quota-contract".to_vec())
+                    //     .unwrap();
+                    // let str = String::from_utf8(bin_map.unwrap()).unwrap();
+                    // let contracts: QuotaContract = serde_json::from_str(&str).unwrap();
+                    // trace!("System contract quota {:?} after update.", contracts);
 
                     // update state
                     let _ = state

@@ -206,18 +206,20 @@ impl Genesis {
                         contracts_factory.register(address, str);
                     }
                 }
-            } else if address == Address::from(reserved_addresses::NODE_MANAGER) {
-                let mut nodes = Vec::new();
-                let mut stakes = Vec::new();
-                for (key, value) in contract.storage.clone() {
-                    nodes.push(Address::from_unaligned(&key).unwrap());
-                    stakes.push(U256::from_dec_str(&value).unwrap());
-                }
+            }
+            //  else if address == Address::from(reserved_addresses::NODE_MANAGER) {
+            //     let mut nodes = Vec::new();
+            //     let mut stakes = Vec::new();
+            //     for (key, value) in contract.storage.clone() {
+            //         nodes.push(Address::from_unaligned(&key).unwrap());
+            //         stakes.push(U256::from_dec_str(&value).unwrap());
+            //     }
 
-                let node_manager = NodeManager::new(nodes, stakes);
-                let str = serde_json::to_string(&node_manager).unwrap();
-                contracts_factory.register(address, str);
-            } else if address == Address::from(reserved_addresses::GROUP) {
+            //     let node_manager = NodeManager::new(nodes, stakes);
+            //     let str = serde_json::to_string(&node_manager).unwrap();
+            //     contracts_factory.register(address, str);
+            // }
+            else if address == Address::from(reserved_addresses::GROUP) {
                 let mut accounts = Vec::new();
                 let mut parent = Address::default();
                 let mut name = String::default();

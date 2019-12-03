@@ -43,15 +43,15 @@ impl EmergContract {
         );
 
         // debug info
-        let bin_map = contracts_db
-            .get(DataCategory::Contracts, b"emerg-contract".to_vec())
-            .unwrap();
-        let str = String::from_utf8(bin_map.unwrap()).unwrap();
-        let contracts: EmergContract = serde_json::from_str(&str).unwrap();
-        trace!(
-            "System contract emergency intervention {:?} after init.",
-            contracts
-        );
+        // let bin_map = contracts_db
+        //     .get(DataCategory::Contracts, b"emerg-contract".to_vec())
+        //     .unwrap();
+        // let str = String::from_utf8(bin_map.unwrap()).unwrap();
+        // let contracts: EmergContract = serde_json::from_str(&str).unwrap();
+        // trace!(
+        //     "System contract emergency intervention {:?} after init.",
+        //     contracts
+        // );
     }
 
     pub fn get_latest_item(
@@ -129,12 +129,12 @@ impl<B: DB> Contract<B> for EmergContract {
                     );
 
                     // debug information, can be ommited
-                    let bin_map = contracts_db
-                        .get(DataCategory::Contracts, b"emerg-contract".to_vec())
-                        .unwrap();
-                    let str = String::from_utf8(bin_map.unwrap()).unwrap();
-                    let contracts: EmergContract = serde_json::from_str(&str).unwrap();
-                    trace!("System contract emerg {:?} after update.", contracts);
+                    // let bin_map = contracts_db
+                    //     .get(DataCategory::Contracts, b"emerg-contract".to_vec())
+                    //     .unwrap();
+                    // let str = String::from_utf8(bin_map.unwrap()).unwrap();
+                    // let contracts: EmergContract = serde_json::from_str(&str).unwrap();
+                    // trace!("System contract emerg {:?} after update.", contracts);
 
                     // update state
                     let _ = state

@@ -43,12 +43,12 @@ impl PriceContract {
         );
 
         // debug info
-        let bin_map = contracts_db
-            .get(DataCategory::Contracts, b"price-contract".to_vec())
-            .unwrap();
-        let str = String::from_utf8(bin_map.unwrap()).unwrap();
-        let contracts: PriceContract = serde_json::from_str(&str).unwrap();
-        trace!("System contract price {:?} after init.", contracts);
+        // let bin_map = contracts_db
+        //     .get(DataCategory::Contracts, b"price-contract".to_vec())
+        //     .unwrap();
+        // let str = String::from_utf8(bin_map.unwrap()).unwrap();
+        // let contracts: PriceContract = serde_json::from_str(&str).unwrap();
+        // trace!("System contract price {:?} after init.", contracts);
     }
 
     pub fn get_latest_item(
@@ -64,7 +64,11 @@ impl PriceContract {
             let contract_map: PriceContract = serde_json::from_str(&s).unwrap();
             trace!("==> lala contract map {:?}", contract_map);
             let map_len = contract_map.contracts.len();
-            trace!("==> lala contract map length {:?}, current height {:?}", map_len, current_height);
+            trace!(
+                "==> lala contract map length {:?}, current height {:?}",
+                map_len,
+                current_height
+            );
             let keys: Vec<_> = contract_map.contracts.keys().collect();
             let latest_key = get_latest_key(current_height, keys);
             trace!("==> lala contract latest key {:?}", latest_key);
