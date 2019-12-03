@@ -27,7 +27,7 @@ use rlp::encode;
 use rustc_hex::FromHex;
 use serde_json;
 use std::cell::RefCell;
-use std::collections::HashMap;
+// use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::Read;
@@ -61,13 +61,13 @@ use zktx::set_param_path;
 pub struct Contract {
     pub nonce: String,
     pub code: String,
-    pub storage: HashMap<String, String>,
+    pub storage: BTreeMap<String, String>,
     pub value: Option<U256>,
 }
 
 #[derive(Debug, PartialEq, Deserialize)]
 pub struct Spec {
-    pub alloc: HashMap<String, Contract>,
+    pub alloc: BTreeMap<String, Contract>,
     pub prevhash: H256,
     pub timestamp: u64,
 }
@@ -206,20 +206,18 @@ impl Genesis {
                         contracts_factory.register(address, str);
                     }
                 }
-            }
-            //  else if address == Address::from(reserved_addresses::NODE_MANAGER) {
-            //     let mut nodes = Vec::new();
-            //     let mut stakes = Vec::new();
-            //     for (key, value) in contract.storage.clone() {
-            //         nodes.push(Address::from_unaligned(&key).unwrap());
-            //         stakes.push(U256::from_dec_str(&value).unwrap());
-            //     }
+            } else if address == Address::from(reserved_addresses::NODE_MANAGER) {
+                let mut nodes = Vec::new();
+                let mut stakes = Vec::new();
+                for (key, value) in contract.storage.clone() {
+                    nodes.push(Address::from_unaligned(&key).unwrap());
+                    stakes.push(U256::from_dec_str(&value).unwrap());
+                }
 
-            //     let node_manager = NodeManager::new(nodes, stakes);
-            //     let str = serde_json::to_string(&node_manager).unwrap();
-            //     contracts_factory.register(address, str);
-            // }
-            else if address == Address::from(reserved_addresses::GROUP) {
+                let node_manager = NodeManager::new(nodes, stakes);
+                let str = serde_json::to_string(&node_manager).unwrap();
+                contracts_factory.register(address, str);
+            } else if address == Address::from(reserved_addresses::GROUP) {
                 let mut accounts = Vec::new();
                 let mut parent = Address::default();
                 let mut name = String::default();
@@ -474,7 +472,7 @@ mod test {
     use crate::libexecutor::genesis::{Contract, Spec};
     use cita_types::{H256, U256};
     use serde_json;
-    use std::collections::HashMap;
+    use std::collections::BTreeMap;
     use std::str::FromStr;
 
     #[test]
@@ -527,7 +525,7 @@ mod test {
                         nonce: "1".to_owned(),
                         code: "0x6060604052600436106100745763".to_owned(),
                         value: Some(U256::from(0x10000000)),
-                        storage: HashMap::new(),
+                        storage: BTreeMap::new(),
                     },
                 ),
             ]

@@ -189,43 +189,41 @@ impl<'a> GenesisCreator<'a> {
                         value: U256::from(0),
                     };
                     self.accounts.insert((*address).clone(), admin_contract);
-                }
-                //  else if *contract_name == "NodeManager" {
-                //     match (params.get(0), params.get(1)) {
-                //         (Some(Token::Array(n)), Some(Token::Array(s))) => {
-                //             let nodes = n
-                //                 .iter()
-                //                 .map(|i| match i {
-                //                     Token::Address(x) => Address::from_slice(x),
-                //                     _ => unreachable!(),
-                //                 })
-                //                 .collect::<Vec<Address>>();
+                } else if *contract_name == "NodeManager" {
+                    match (params.get(0), params.get(1)) {
+                        (Some(Token::Array(n)), Some(Token::Array(s))) => {
+                            let nodes = n
+                                .iter()
+                                .map(|i| match i {
+                                    Token::Address(x) => Address::from_slice(x),
+                                    _ => unreachable!(),
+                                })
+                                .collect::<Vec<Address>>();
 
-                //             let stakes: Vec<U256> = s
-                //                 .iter()
-                //                 .map(|i| match i {
-                //                     Token::Uint(x) => U256::from(*x),
-                //                     _ => unreachable!(),
-                //                 })
-                //                 .collect::<Vec<U256>>();
+                            let stakes: Vec<U256> = s
+                                .iter()
+                                .map(|i| match i {
+                                    Token::Uint(x) => U256::from(*x),
+                                    _ => unreachable!(),
+                                })
+                                .collect::<Vec<U256>>();
 
-                //             let mut param = BTreeMap::new();
-                //             for i in 0..nodes.len() {
-                //                 param.insert(nodes[i].hex(), stakes[i].to_hex());
-                //             }
+                            let mut param = BTreeMap::new();
+                            for i in 0..nodes.len() {
+                                param.insert(nodes[i].hex(), stakes[i].to_hex());
+                            }
 
-                //             let contract = Account {
-                //                 nonce: U256::from(1),
-                //                 code: "".to_string(),
-                //                 storage: param,
-                //                 value: U256::from(0),
-                //             };
-                //             self.accounts.insert((*address).clone(), contract);
-                //         }
-                //         _ => panic!("parse error when init node manager"),
-                //     }
-                // }
-                else if *contract_name == "Group" {
+                            let contract = Account {
+                                nonce: U256::from(1),
+                                code: "".to_string(),
+                                storage: param,
+                                value: U256::from(0),
+                            };
+                            self.accounts.insert((*address).clone(), contract);
+                        }
+                        _ => panic!("parse error when init node manager"),
+                    }
+                } else if *contract_name == "Group" {
                     match (params.get(0), params.get(1), params.get(2)) {
                         (
                             Some(Token::Address(a)),

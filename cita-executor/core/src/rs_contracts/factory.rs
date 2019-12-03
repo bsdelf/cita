@@ -108,7 +108,7 @@ impl<B: DB> ContractsFactory<B> {
             || *addr == Address::from(reserved_addresses::EMERGENCY_INTERVENTION)
             || *addr == Address::from(reserved_addresses::SYS_CONFIG)
             || *addr == Address::from(reserved_addresses::QUOTA_MANAGER)
-            // || *addr == Address::from(reserved_addresses::NODE_MANAGER)
+            || *addr == Address::from(reserved_addresses::NODE_MANAGER)
             || *addr == Address::from(reserved_addresses::VERSION_MANAGEMENT)
             || *addr == Address::from(reserved_addresses::GROUP)
             || *addr == Address::from(reserved_addresses::GROUP_MANAGEMENT)
