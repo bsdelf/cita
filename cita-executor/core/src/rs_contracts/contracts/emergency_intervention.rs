@@ -59,6 +59,8 @@ impl EmergContract {
         current_height: u64,
         contracts_db: Arc<ContractsDB>,
     ) -> (Option<EmergContract>, Option<EmergencyIntervention>) {
+        trace!("==> lala contract current height {:?}", current_height);
+
         if let Some(latest_store) = contracts_db
             .get(DataCategory::Contracts, b"emerg-contract".to_vec())
             .expect("get latest store error")

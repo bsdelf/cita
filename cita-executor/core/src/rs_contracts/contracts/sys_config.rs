@@ -65,6 +65,7 @@ impl SystemContract {
         current_height: u64,
         contracts_db: Arc<ContractsDB>,
     ) -> (Option<SystemContract>, Option<Sysconfig>) {
+        trace!("==> lala contract current height {:?}", current_height);
         let start = Instant::now();
         if let Some(system_store) = contracts_db
             .get(DataCategory::Contracts, b"system-contract".to_vec())

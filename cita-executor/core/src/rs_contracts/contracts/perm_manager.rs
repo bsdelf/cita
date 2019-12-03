@@ -102,7 +102,6 @@ impl PermStore {
     }
 
     pub fn get_latest_item(
-        &self,
         current_height: u64,
         contracts_db: Arc<ContractsDB>,
     ) -> (Option<PermStore>, Option<PermManager>) {
@@ -111,9 +110,10 @@ impl PermStore {
             .get(DataCategory::Contracts, b"permission-contract".to_vec())
             .expect("get permission error")
         {
+            trace!("==> lala contract current height {:?}", current_height);
             let s = String::from_utf8(perm_store).expect("from vec to string error");
             let contract_map: PermStore = serde_json::from_str(&s).unwrap();
-            trace!("==> lala contract map {:?}", contract_map);
+            // trace!("==> lala contract map {:?}", contract_map);
 
             let map_len = contract_map.contracts.len();
             trace!("==> lala contract map length {:?}", map_len);
@@ -129,16 +129,53 @@ impl PermStore {
 
             let latest_perm_manager: PermManager =
                 serde_json::from_str(&(*bin).clone().unwrap()).unwrap();
-            trace!(
-                "System contracts latest permission {:?}",
-                latest_perm_manager
-            );
+            // trace!(
+            //     "System contracts latest permission {:?}",
+            //     latest_perm_manager
+            // );
             let duration = start.elapsed();
             trace!("Time elapsed in expensive_function() is: {:?}", duration);
             return (Some(contract_map), Some(latest_perm_manager));
         }
 
         (None, None)
+    }
+
+    pub fn update_admin_permissions<B: DB>(
+        params: &InterpreterParams,
+        context: &Context,
+        old_admin: Address,
+        new_admin: Address,
+        contracts_db: Arc<ContractsDB>,
+        state: Arc<RefCell<State<B>>>,
+    ) {
+        match PermStore::get_latest_item(context.block_number, contracts_db.clone()) {
+            (Some(mut contract_map), Some(mut latest_permission_manager)) => {
+                latest_permission_manager.update_admin_permissions(old_admin, new_admin);
+
+                let str = serde_json::to_string(&latest_permission_manager).unwrap();
+                let updated_hash = keccak256(&str.as_bytes().to_vec());
+                let _ = state
+                    .borrow_mut()
+                    .set_storage(
+                        &params.contract.code_address,
+                        H256::from(context.block_number),
+                        H256::from(updated_hash),
+                    )
+                    .expect("state set storage error");
+                contract_map
+                    .contracts
+                    .insert(context.block_number, Some(str));
+
+                let map_str = serde_json::to_string(&contract_map).unwrap();
+                let _ = contracts_db.insert(
+                    DataCategory::Contracts,
+                    b"permission-contract".to_vec(),
+                    map_str.as_bytes().to_vec(),
+                );
+            }
+            _ => unreachable!(),
+        }
     }
 }
 
@@ -152,7 +189,7 @@ impl<B: DB> Contract<B> for PermStore {
     ) -> Result<InterpreterResult, ContractError> {
         trace!("System contract - permission - enter execute");
         let (contract_map, latest_permission_manager) =
-            self.get_latest_item(context.block_number, contracts_db.clone());
+            PermStore::get_latest_item(context.block_number, contracts_db.clone());
         match (contract_map, latest_permission_manager) {
             (Some(mut contract_map), Some(mut latest_permission_manager)) => {
                 trace!(
@@ -1033,6 +1070,24 @@ impl PermManager {
             params.gas_limit,
             vec![],
         ));
+    }
+
+    pub fn update_admin_permissions(&mut self, old_admin: Address, new_admin: Address) {
+        // give new admin buildin permissions
+        let mut super_admin_perms = BTreeSet::new();
+        for p in build_in_perm::BUILD_IN_PERMS.iter() {
+            super_admin_perms.insert(Address::from(*p));
+        }
+        self.account_own_perms.insert(new_admin, super_admin_perms);
+
+        // remove old admin buildin permissions
+        if let Some(perms) = self.account_own_perms.get_mut(&old_admin) {
+            for i in 0..build_in_perm::BUILD_IN_PERMS.len() {
+                if i != 13 && i != 14 {
+                    perms.remove(&Address::from(build_in_perm::BUILD_IN_PERMS[i]));
+                }
+            }
+        }
     }
 
     fn have_permission(&self, sender: Address, perm_address: Address) -> bool {

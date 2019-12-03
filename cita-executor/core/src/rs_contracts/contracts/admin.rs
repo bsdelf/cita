@@ -6,6 +6,7 @@ use cita_vm::evm::{InterpreterParams, InterpreterResult, Log};
 use common_types::context::Context;
 use common_types::errors::ContractError;
 
+use crate::rs_contracts::contracts::perm_manager::PermStore;
 use crate::rs_contracts::storage::db_contracts::ContractsDB;
 use crate::rs_contracts::storage::db_trait::DataBase;
 use crate::rs_contracts::storage::db_trait::DataCategory;
@@ -57,6 +58,8 @@ impl AdminContract {
         current_height: u64,
         contracts_db: Arc<ContractsDB>,
     ) -> (Option<AdminContract>, Option<Admin>) {
+        trace!("==> lala contract current height {:?}", current_height);
+
         let start = Instant::now();
 
         if let Some(latest_store) = contracts_db
@@ -112,7 +115,13 @@ impl<B: DB> Contract<B> for AdminContract {
                     extract_to_u32(&params.input[..]).and_then(|signature| match signature {
                         0xf851a440u32 => latest_item.get_admin(),
                         0x24d7806cu32 => latest_item.is_admin(params),
-                        0x1c1b8772u32 => latest_item.update(params, &mut updated),
+                        0x1c1b8772u32 => latest_item.update(
+                            params,
+                            context,
+                            contracts_db.clone(),
+                            state.clone(),
+                            &mut updated,
+                        ),
                         _ => panic!("Invalid function signature".to_owned()),
                     });
 
@@ -184,15 +193,28 @@ impl Admin {
         ));
     }
 
-    fn update(
+    fn update<B: DB>(
         &mut self,
         params: &InterpreterParams,
+        context: &Context,
+        contracts_db: Arc<ContractsDB>,
+        state: Arc<RefCell<State<B>>>,
         changed: &mut bool,
     ) -> Result<InterpreterResult, ContractError> {
         trace!("System contract - Admin - update");
         let param_address = Address::from_slice(&params.input[16..36]);
         // only admin can invoke
         if self.only_admin(params.sender) {
+            // update permission
+            PermStore::update_admin_permissions(
+                params,
+                context,
+                self.admin,
+                param_address,
+                contracts_db.clone(),
+                state.clone(),
+            );
+
             self.admin = param_address;
 
             let mut logs = Vec::new();

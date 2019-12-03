@@ -59,6 +59,7 @@ impl NodeStore {
         current_height: u64,
         contracts_db: Arc<ContractsDB>,
     ) -> (Option<NodeStore>, Option<NodeManager>) {
+        trace!("==> lala contract current height {:?}", current_height);
         let start = Instant::now();
 
         if let Some(nodes_map) = contracts_db

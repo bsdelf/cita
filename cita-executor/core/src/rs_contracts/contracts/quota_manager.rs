@@ -63,6 +63,7 @@ impl QuotaContract {
         current_height: u64,
         contracts_db: Arc<ContractsDB>,
     ) -> (Option<QuotaContract>, Option<QuotaManager>) {
+        trace!("==> lala contract current height {:?}", current_height);
         if let Some(emerg_map) = contracts_db
             .get(DataCategory::Contracts, b"quota-contract".to_vec())
             .expect("get emerg error")

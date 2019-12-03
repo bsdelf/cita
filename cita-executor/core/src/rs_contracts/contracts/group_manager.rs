@@ -67,6 +67,8 @@ impl GroupStore {
         current_height: u64,
         contracts_db: Arc<ContractsDB>,
     ) -> (Option<GroupStore>, Option<GroupManager>) {
+        trace!("==> lala contract current height {:?}", current_height);
+
         if let Some(constract_store) = contracts_db
             .get(DataCategory::Contracts, b"group-contract".to_vec())
             .expect("get constract store error")
