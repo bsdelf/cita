@@ -19,7 +19,7 @@ use ethabi::param_type::ParamType;
 use ethabi::Token;
 use std::cell::RefCell;
 use std::collections::BTreeMap;
-use std::collections::HashSet;
+// use std::collections::HashSet;
 use std::sync::Arc;
 use tiny_keccak::keccak256;
 
@@ -29,6 +29,8 @@ use cita_vm::state::StateObjectInfo;
 use common_types::reserved_addresses;
 use ethabi::token::LenientTokenizer;
 use ethabi::token::Tokenizer;
+
+use std::collections::BTreeSet;
 
 use std::time::{Duration, Instant};
 
@@ -63,12 +65,12 @@ impl PermStore {
         }
 
         let mut account_own_perms = BTreeMap::new();
-        let mut super_admin_perms = HashSet::new();
+        let mut super_admin_perms = BTreeSet::new();
         for p in build_in_perm::BUILD_IN_PERMS.iter() {
             super_admin_perms.insert(Address::from(*p));
         }
         account_own_perms.insert(admin, super_admin_perms);
-        let mut group_perms = HashSet::new();
+        let mut group_perms = BTreeSet::new();
         group_perms.insert(Address::from(build_in_perm::SEND_TX_ADDRESS));
         group_perms.insert(Address::from(build_in_perm::CREATE_CONTRACT_ADDRESS));
         account_own_perms.insert(
@@ -234,11 +236,15 @@ impl<B: DB> Contract<B> for PermStore {
                 if result.is_ok() & updated {
                     let new_perm_manager = latest_permission_manager;
                     let str = serde_json::to_string(&new_perm_manager).unwrap();
+                    trace!("hash content is {:?}", str);
+                    let updated_hash = keccak256(&str.as_bytes().to_vec());
+                    trace!("updated hash is {:?}", updated_hash);
+
                     contract_map
                         .contracts
-                        .insert(context.block_number, Some(str));
+                        .insert(context.block_number, Some(str.clone()));
+
                     let str = serde_json::to_string(&contract_map).unwrap();
-                    let updated_hash = keccak256(&str.as_bytes().to_vec());
                     let _ = contracts_db.insert(
                         DataCategory::Contracts,
                         b"permission-contract".to_vec(),
@@ -273,20 +279,20 @@ impl<B: DB> Contract<B> for PermStore {
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct PermManager {
     pub perm_collection: BTreeMap<Address, Permission>,
-    pub account_own_perms: BTreeMap<Address, HashSet<Address>>,
+    pub account_own_perms: BTreeMap<Address, BTreeSet<Address>>,
 }
 
 impl PermManager {
     pub fn new(super_admin: Address) -> Self {
         let mut account_own_perms = BTreeMap::new();
 
-        let mut super_admin_perms = HashSet::new();
+        let mut super_admin_perms = BTreeSet::new();
         for p in build_in_perm::BUILD_IN_PERMS.iter() {
             super_admin_perms.insert(Address::from(*p));
         }
         account_own_perms.insert(super_admin, super_admin_perms);
 
-        let mut group_perms = HashSet::new();
+        let mut group_perms = BTreeSet::new();
         group_perms.insert(Address::from(build_in_perm::SEND_TX_ADDRESS));
         group_perms.insert(Address::from(build_in_perm::CREATE_CONTRACT_ADDRESS));
         account_own_perms.insert(
@@ -418,7 +424,7 @@ impl PermManager {
 
             // update accounts permissions
             for (_account, perms) in self.account_own_perms.iter_mut() {
-                perms.retain(|&k| k != perm_address);
+                perms.remove(&perm_address);
             }
 
             *changed = true;
@@ -655,7 +661,7 @@ impl PermManager {
                         if let Some(perms) = self.account_own_perms.get_mut(&account) {
                             perms.insert(*p);
                         } else {
-                            let mut set = HashSet::new();
+                            let mut set = BTreeSet::new();
                             set.insert(*p);
                             self.account_own_perms.insert(account, set);
                         }
@@ -762,7 +768,7 @@ impl PermManager {
         if let Some(perms) = self.account_own_perms.get_mut(&account) {
             perms.insert(permission);
         } else {
-            let mut set = HashSet::new();
+            let mut set = BTreeSet::new();
             set.insert(permission);
             self.account_own_perms.insert(account, set);
         }

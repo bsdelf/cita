@@ -1,24 +1,38 @@
 use cita_types::Address;
-use std::collections::HashSet;
-
-pub type FuncSig = [u8; 4];
+use std::cmp::Ordering;
+use std::collections::BTreeSet;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Permission {
     name: String,
-    resources: HashSet<Resource>,
+    resources: BTreeSet<Resource>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Resource {
     addr: Address,
     func: Vec<u8>,
 }
 
+impl Ord for Resource {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.func.cmp(&other.func)
+    }
+}
+
+impl PartialOrd for Resource {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+// Permission name in new is "updatePermission"
+
 impl Permission {
     pub fn new(name: String, contracts: Vec<Address>, funcs: Vec<Vec<u8>>) -> Self {
         let mut perm = Permission::default();
         trace!("Permission name in new is {:?}", name);
+        trace!("Permission contracts in new is {:?}", contracts);
+        trace!("Permission funcs in new is {:?}", funcs);
         perm.name = name;
         for i in 0..contracts.len() {
             let resource = Resource {
@@ -55,8 +69,6 @@ impl Permission {
     }
 
     pub fn in_permission(&self, cont: Address, func: Vec<u8>) -> bool {
-        // let cont_addr = Address::from(&params.input[16..36]);
-        // let func = &params.input[36..40];
         let resource = Resource {
             addr: cont,
             func: func,

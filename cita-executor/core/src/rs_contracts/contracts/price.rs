@@ -100,7 +100,7 @@ impl<B: DB> Contract<B> for PriceContract {
             self.get_latest_item(context.block_number, contracts_db.clone());
         match (contract_map, latest_price) {
             (Some(mut contract_map), Some(mut latest_price)) => {
-                trace!("System contracts - price - params input {:?}", params);
+                trace!("System contracts - price - params input {:?}", params.input);
                 trace!("System contracts - price - params context {:?}", context);
                 let mut updated = false;
                 let result =
