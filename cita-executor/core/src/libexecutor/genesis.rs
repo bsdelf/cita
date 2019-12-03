@@ -27,13 +27,12 @@ use rlp::encode;
 use rustc_hex::FromHex;
 use serde_json;
 use std::cell::RefCell;
-// use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::Read;
 use std::path::Path;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 use std::u64;
 
 use crate::rs_contracts::contracts::admin::Admin;

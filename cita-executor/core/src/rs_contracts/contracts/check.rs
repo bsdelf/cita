@@ -18,18 +18,13 @@ pub fn only_admin(
 ) -> Result<bool, ContractError> {
     let current_height = context.block_number;
 
-    if let Some(admin_map) = contracts_db
+    if let Some(store) = contracts_db
         .get(DataCategory::Contracts, b"admin-contract".to_vec())
-        .expect("get admin map error")
+        .expect("get store error")
     {
-        let s = String::from_utf8(admin_map).expect("from vec to string error");
-        let contract_map: AdminContract = serde_json::from_str(&s).unwrap();
-        trace!("==> lala contract map {:?}", contract_map);
-        let map_len = contract_map.contracts.len();
-        trace!("==> lala contract map length {:?}", map_len);
+        let contract_map: AdminContract = serde_json::from_slice(&store).unwrap();
         let keys: Vec<_> = contract_map.contracts.keys().collect();
         let latest_key = get_latest_key(current_height, keys);
-        trace!("==> lala contract latest key {:?}", latest_key);
 
         let bin = contract_map
             .contracts

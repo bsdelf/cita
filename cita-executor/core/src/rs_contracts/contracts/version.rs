@@ -41,14 +41,6 @@ impl VersionContract {
             b"version-contract".to_vec(),
             s.as_bytes().to_vec(),
         );
-
-        // debug info
-        // let bin_map = contracts_db
-        //     .get(DataCategory::Contracts, b"version-contract".to_vec())
-        //     .unwrap();
-        // let str = String::from_utf8(bin_map.unwrap()).unwrap();
-        // let contracts: VersionContract = serde_json::from_str(&str).unwrap();
-        // trace!("System contract version {:?} after init.", contracts);
     }
 
     pub fn get_latest_item(
@@ -56,28 +48,28 @@ impl VersionContract {
         current_height: u64,
         contracts_db: Arc<ContractsDB>,
     ) -> (Option<VersionContract>, Option<Version>) {
-        trace!("==> lala contract current height {:?}", current_height);
-        if let Some(latest_store) = contracts_db
+        if let Some(store) = contracts_db
             .get(DataCategory::Contracts, b"version-contract".to_vec())
-            .expect("get latest store error")
+            .expect("get store error")
         {
-            let s = String::from_utf8(latest_store).expect("from vec to string error");
-            let contract_map: VersionContract = serde_json::from_str(&s).unwrap();
-            trace!("==> lala contract map {:?}", contract_map);
-            let map_len = contract_map.contracts.len();
-            trace!("==> lala contract map length {:?}", map_len);
+            let contract_map: VersionContract = serde_json::from_slice(&store).unwrap();
             let keys: Vec<_> = contract_map.contracts.keys().collect();
-            let latest_key = get_latest_key(current_height, keys);
-            trace!("==> lala contract latest key {:?}", latest_key);
+            let latest_key = get_latest_key(current_height, keys.clone());
+            trace!(
+                "Contract get_latest_key: current_height {:?}, keys {:?}, latest_key {:?}",
+                current_height,
+                keys,
+                latest_key
+            );
 
             let bin = contract_map
                 .contracts
                 .get(&(current_height as u64))
                 .or(contract_map.contracts.get(&latest_key))
-                .expect("get contract according to height error");
-
+                .expect("get concrete contract error");
             let latest_item: Version = serde_json::from_str(&(*bin).clone().unwrap()).unwrap();
-            trace!("System contracts latest version {:?}", latest_item);
+            trace!("Contract latest item {:?}", latest_item);
+
             return (Some(contract_map), Some(latest_item));
         }
         (None, None)

@@ -1,11 +1,10 @@
+use crate::rs_contracts::contracts::utils::is_permssion_contract;
 use cita_vm::evm::InterpreterParams;
 use cita_vm::evm::InterpreterResult;
 use common_types::errors::ContractError;
 use common_types::reserved_addresses;
-// use crate::contracts::Sysconfig;
-use crate::rs_contracts::contracts::utils::is_permssion_contract;
 
-use cita_types::{Address, H256};
+use cita_types::Address;
 use common_types::context::Context;
 
 use std::sync::Arc;
@@ -124,9 +123,6 @@ impl<B: DB> ContractsFactory<B> {
         params: &InterpreterParams,
         context: &Context,
     ) -> Result<InterpreterResult, ContractError> {
-        use std::time::{Duration, Instant};
-        let start = Instant::now();
-
         if params.contract.code_address == Address::from(reserved_addresses::ADMIN) {
             return self.admin_contract.execute(
                 &params,
@@ -204,8 +200,6 @@ impl<B: DB> ContractsFactory<B> {
                 self.state.clone(),
             );
         }
-        let duration = start.elapsed();
-        trace!("Exectue this contract using {:?}", duration);
 
         return Err(ContractError::AdminError(String::from(
             "not a valid address",

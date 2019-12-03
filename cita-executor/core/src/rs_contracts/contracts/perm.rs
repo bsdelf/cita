@@ -25,14 +25,10 @@ impl PartialOrd for Resource {
         Some(self.cmp(other))
     }
 }
-// Permission name in new is "updatePermission"
 
 impl Permission {
     pub fn new(name: String, contracts: Vec<Address>, funcs: Vec<Vec<u8>>) -> Self {
         let mut perm = Permission::default();
-        trace!("Permission name in new is {:?}", name);
-        trace!("Permission contracts in new is {:?}", contracts);
-        trace!("Permission funcs in new is {:?}", funcs);
         perm.name = name;
         for i in 0..contracts.len() {
             let resource = Resource {

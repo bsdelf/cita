@@ -20,7 +20,7 @@ use ethabi::param_type::ParamType;
 use ethabi::Token;
 use std::cell::RefCell;
 use std::collections::BTreeMap;
-// use std::collections::HashSet;
+use std::collections::BTreeSet;
 use std::sync::Arc;
 use tiny_keccak::keccak256;
 
@@ -30,12 +30,6 @@ use cita_vm::state::StateObjectInfo;
 use common_types::reserved_addresses;
 use ethabi::token::LenientTokenizer;
 use ethabi::token::Tokenizer;
-
-use std::collections::BTreeSet;
-
-use std::time::{Duration, Instant};
-
-pub type FuncSig = [u8; 4];
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PermStore {
@@ -89,53 +83,34 @@ impl PermStore {
             b"permission-contract".to_vec(),
             s.as_bytes().to_vec(),
         );
-
-        // debug info
-        // let perm_store_bin = contracts_db
-        //     .get(DataCategory::Contracts, b"permission-contract".to_vec())
-        //     .unwrap();
-        // let perm_store_str = String::from_utf8(perm_store_bin.unwrap()).unwrap();
-        // let perm_store: PermStore = serde_json::from_str(&perm_store_str).unwrap();
-
-        // let perm_manager_str = perm_store.contracts.get(&0).unwrap();
-        // let perm_manager: PermManager = serde_json::from_str(&*perm_manager_str.unwrap()).unwrap();
-        // trace!("System contract permission {:?} after init.", perm_store);
     }
 
     pub fn get_latest_item(
         current_height: u64,
         contracts_db: Arc<ContractsDB>,
     ) -> (Option<PermStore>, Option<PermManager>) {
-        let start = Instant::now();
-        if let Some(perm_store) = contracts_db
+        if let Some(store) = contracts_db
             .get(DataCategory::Contracts, b"permission-contract".to_vec())
-            .expect("get permission error")
+            .expect("get store error")
         {
-            trace!("==> lala contract current height {:?}", current_height);
-            let s = String::from_utf8(perm_store).expect("from vec to string error");
-            let contract_map: PermStore = serde_json::from_str(&s).unwrap();
-            // trace!("==> lala contract map {:?}", contract_map);
-
-            let map_len = contract_map.contracts.len();
-            trace!("==> lala contract map length {:?}", map_len);
+            let contract_map: PermStore = serde_json::from_slice(&store).unwrap();
             let keys: Vec<_> = contract_map.contracts.keys().collect();
-            let latest_key = get_latest_key(current_height, keys);
-            trace!("==> lala contract latest key {:?}", latest_key);
+            let latest_key = get_latest_key(current_height, keys.clone());
+            trace!(
+                "Contract get_latest_key: current_height {:?}, keys {:?}, latest_key {:?}",
+                current_height,
+                keys,
+                latest_key
+            );
 
             let bin = contract_map
                 .contracts
                 .get(&(current_height as u64))
                 .or(contract_map.contracts.get(&latest_key))
-                .expect("get contract according to height error");
+                .expect("get concrete contract error");
 
             let latest_perm_manager: PermManager =
                 serde_json::from_str(&(*bin).clone().unwrap()).unwrap();
-            // trace!(
-            //     "System contracts latest permission {:?}",
-            //     latest_perm_manager
-            // );
-            let duration = start.elapsed();
-            trace!("Time elapsed in expensive_function() is: {:?}", duration);
             return (Some(contract_map), Some(latest_perm_manager));
         }
 

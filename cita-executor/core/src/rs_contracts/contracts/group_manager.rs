@@ -52,44 +52,34 @@ impl GroupStore {
             b"group-contract".to_vec(),
             s.as_bytes().to_vec(),
         );
-
-        // debug info
-        // let bin_map = contracts_db
-        //     .get(DataCategory::Contracts, b"group-contract".to_vec())
-        //     .unwrap();
-        // let str = String::from_utf8(bin_map.unwrap()).unwrap();
-        // let contracts: GroupStore = serde_json::from_str(&str).unwrap();
-        // trace!("System contract nodes {:?} after init.", contracts);
     }
 
     pub fn get_latest_item(
         current_height: u64,
         contracts_db: Arc<ContractsDB>,
     ) -> (Option<GroupStore>, Option<GroupManager>) {
-        trace!("==> lala contract current height {:?}", current_height);
-
-        if let Some(constract_store) = contracts_db
+        if let Some(store) = contracts_db
             .get(DataCategory::Contracts, b"group-contract".to_vec())
-            .expect("get constract store error")
+            .expect("get store error")
         {
-            let s = String::from_utf8(constract_store).expect("from vec to string error");
-            let contract_map: GroupStore = serde_json::from_str(&s).unwrap();
-            trace!("==> lala contract map {:?}", contract_map);
-
-            let map_len = contract_map.contracts.len();
-            trace!("==> lala contract map length {:?}", map_len);
+            let contract_map: GroupStore = serde_json::from_slice(&store).unwrap();
             let keys: Vec<_> = contract_map.contracts.keys().collect();
-            let latest_key = get_latest_key(current_height, keys);
-            trace!("==> lala contract latest key {:?}", latest_key);
+            let latest_key = get_latest_key(current_height, keys.clone());
+            trace!(
+                "Contract get_latest_key: current_height {:?}, keys {:?}, latest_key {:?}",
+                current_height,
+                keys,
+                latest_key
+            );
 
             let bin = contract_map
                 .contracts
                 .get(&(current_height as u64))
                 .or(contract_map.contracts.get(&latest_key))
-                .expect("get contract according to height error");
-
+                .expect("get concrete contract error");
             let latest_item: GroupManager = serde_json::from_str(&(*bin).clone().unwrap()).unwrap();
-            trace!("System contracts latest group {:?}", latest_item);
+            trace!("Contract latest item {:?}", latest_item);
+
             return (Some(contract_map), Some(latest_item));
         }
         (None, None)
@@ -102,7 +92,7 @@ impl GroupStore {
     ) -> Option<Vec<Address>> {
         let mut groups = Vec::new();
         match GroupStore::get_latest_item(context.block_number, contracts_db.clone()) {
-            (_, Some(mut latest_group_manager)) => {
+            (_, Some(latest_group_manager)) => {
                 for (addr, entry) in latest_group_manager.groups.iter() {
                     if entry.in_group(account) {
                         groups.push(*addr);
@@ -110,9 +100,8 @@ impl GroupStore {
                 }
                 return Some(groups);
             }
-            _ => unreachable!(),
+            _ => None,
         }
-        None
     }
 }
 
