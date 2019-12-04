@@ -11,6 +11,7 @@ use std::sync::Arc;
 
 use crate::rs_contracts::contracts::admin::AdminContract;
 use crate::rs_contracts::contracts::auto_exec::AutoContract;
+use crate::rs_contracts::contracts::batch_tx::BatchTx;
 use crate::rs_contracts::contracts::contract::Contract;
 use crate::rs_contracts::contracts::emergency_intervention::EmergContract;
 use crate::rs_contracts::contracts::group_manager::GroupStore;
@@ -41,6 +42,7 @@ pub struct ContractsFactory<B> {
     version_contract: VersionContract,
     group_store: GroupStore,
     auto_exec_contract: AutoContract,
+    batch_tx: BatchTx,
 }
 
 impl<B: DB> ContractsFactory<B> {
@@ -68,6 +70,8 @@ impl<B: DB> ContractsFactory<B> {
             GroupStore::init(contract, self.contracts_db.clone());
         } else if address == Address::from(reserved_addresses::AUTO_EXEC) {
             AutoContract::init(contract, self.contracts_db.clone());
+        } else if address == Address::from(reserved_addresses::BATCH_TX) {
+            trace!("Init batch tx system contract");
         }
     }
 
@@ -92,6 +96,7 @@ impl<B: DB + 'static> ContractsFactory<B> {
             version_contract: VersionContract::default(),
             group_store: GroupStore::default(),
             auto_exec_contract: AutoContract::default(),
+            batch_tx: BatchTx::default(),
         }
     }
 
@@ -108,6 +113,7 @@ impl<B: DB + 'static> ContractsFactory<B> {
             || *addr == Address::from(reserved_addresses::GROUP)
             || *addr == Address::from(reserved_addresses::GROUP_MANAGEMENT)
             || *addr == Address::from(reserved_addresses::AUTO_EXEC)
+            || *addr == Address::from(reserved_addresses::BATCH_TX)
             || is_permssion_contract(*addr)
         {
             return true;
@@ -170,6 +176,13 @@ impl<B: DB + 'static> ContractsFactory<B> {
             );
         } else if params.contract.code_address == Address::from(reserved_addresses::AUTO_EXEC) {
             return self.auto_exec_contract.execute(
+                &params,
+                context,
+                self.contracts_db.clone(),
+                self.state.clone(),
+            );
+        } else if params.contract.code_address == Address::from(reserved_addresses::BATCH_TX) {
+            return self.batch_tx.execute(
                 &params,
                 context,
                 self.contracts_db.clone(),

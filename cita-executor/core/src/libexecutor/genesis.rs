@@ -37,6 +37,7 @@ use std::u64;
 
 use crate::rs_contracts::contracts::admin::Admin;
 use crate::rs_contracts::contracts::auto_exec::AutoExec;
+use crate::rs_contracts::contracts::batch_tx::BatchTx;
 use crate::rs_contracts::contracts::emergency_intervention;
 use crate::rs_contracts::contracts::group_manager::GroupManager;
 use crate::rs_contracts::contracts::node_manager::NodeManager;
@@ -376,6 +377,11 @@ impl Genesis {
         let auto_exec = AutoExec::default();
         let str = serde_json::to_string(&auto_exec).unwrap();
         contracts_factory.register(Address::from(reserved_addresses::AUTO_EXEC), str);
+
+        // register batch tx
+        let batch_tx = BatchTx::default();
+        let str = serde_json::to_string(&batch_tx).unwrap();
+        contracts_factory.register(Address::from(reserved_addresses::BATCH_TX), str);
 
         // register permission_contracts
         contracts_factory.register_perms(admin, permission_contracts);

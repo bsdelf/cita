@@ -334,7 +334,7 @@ impl NodeManager {
         &self,
         params: &InterpreterParams,
     ) -> Result<InterpreterResult, ContractError> {
-        // only in charge mode
+        // Todo only in charge mode
         trace!("Node contract stake_permillage, params {:?}", params.input);
         let param_address = Address::from_slice(&params.input[16..36]);
         let node_stakes = self.stakes.get(&param_address).unwrap();
