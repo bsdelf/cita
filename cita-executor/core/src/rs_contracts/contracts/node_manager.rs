@@ -252,6 +252,7 @@ impl NodeManager {
             let param_address = Address::from_slice(&params.input[16..36]);
             if *self.status.get(&param_address).unwrap_or(&false) {
                 self.nodes.retain(|&n| n != param_address);
+                self.stakes.remove(&param_address);
                 if let Some(s) = self.status.get_mut(&param_address) {
                     *s = false;
                 }
