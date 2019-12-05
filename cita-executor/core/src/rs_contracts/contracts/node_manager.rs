@@ -224,6 +224,7 @@ impl NodeManager {
             let param_address = Address::from_slice(&params.input[16..36]);
             if !*self.status.get(&param_address).unwrap_or(&false) {
                 self.status.insert(param_address, true);
+                self.stakes.insert(param_address, U256::from(0));
                 self.nodes.push(param_address);
                 *changed = true;
 
