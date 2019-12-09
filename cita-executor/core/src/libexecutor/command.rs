@@ -318,19 +318,12 @@ impl Commander for Executor {
         // Try block_quota_limit first
         let (run_ok, quota_used) = check_quota(max_quota);
         let lower = if !run_ok {
-<<<<<<< HEAD
             trace!("estimate_quota failed with {}.", max_quota);
             return Err(format!(
                 "Requires quota higher than upper limit({}) or some internal errors",
                 max_quota
             )
             .to_owned());
-=======
-            trace!("estimate_gas failed with {}.", max_quota);
-            return Err(
-                format!("Requires quota higher than upper limit: {}", max_quota).to_owned(),
-            );
->>>>>>> Fix format issues[skip audit]
         } else {
             quota_used
         };
@@ -357,11 +350,7 @@ impl Commander for Executor {
             while upper - lower > precision {
                 let mid = (lower + upper) / 2;
                 trace!(
-<<<<<<< HEAD
                     "estimate_quota : lower {} .. mid {} .. upper {}",
-=======
-                    "estimate_gas : lower {} .. mid {} .. upper {}",
->>>>>>> Fix format issues[skip audit]
                     lower,
                     mid,
                     upper
