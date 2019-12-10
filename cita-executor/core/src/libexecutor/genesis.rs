@@ -39,7 +39,7 @@ use crate::rs_contracts::contracts::admin::Admin;
 use crate::rs_contracts::contracts::auto_exec::AutoExec;
 use crate::rs_contracts::contracts::batch_tx::BatchTx;
 use crate::rs_contracts::contracts::emergency_intervention;
-use crate::rs_contracts::contracts::group_manager::GroupManager;
+use crate::rs_contracts::contracts::group::group_manager::GroupManager;
 use crate::rs_contracts::contracts::node_manager::NodeManager;
 use crate::rs_contracts::contracts::perm::Permission;
 use crate::rs_contracts::contracts::price::Price;
@@ -322,7 +322,7 @@ impl Genesis {
                     } else {
                         let addr = Address::from_unaligned(value.as_str()).unwrap();
                         conts.push(addr);
-                        let mut hash_key;
+                        let hash_key;
                         if addr == Address::from(reserved_addresses::PERMISSION_SEND_TX)
                             || addr == Address::from(reserved_addresses::PERMISSION_CREATE_CONTRACT)
                         {

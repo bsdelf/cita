@@ -24,6 +24,7 @@ use crate::miner::Miner;
 use crate::params::InitData;
 use crate::solc::Solc;
 
+use cita_types::traits::LowerHex;
 use cita_types::{clean_0x, Address, U256};
 use ethabi::Contract;
 use ethabi::Token;
@@ -135,11 +136,16 @@ impl<'a> GenesisCreator<'a> {
 
                 if *contract_name == "Admin" || *contract_name == "QuotaManager" {
                     let mut param = BTreeMap::new();
-                    let addr = match params.get(0) {
-                        Some(Token::Address(addr)) => addr,
-                        _ => unimplemented!(),
-                    };
-                    param.insert("admin".to_string(), addr.hex());
+                    // let addr = match params.get(0) {
+                    //     Some(Token::Address(addr)) => addr,
+                    //     _ => unimplemented!(),
+                    // };
+                    let addr = params
+                        .get(0)
+                        .map(|s| s.clone().to_address())
+                        .unwrap()
+                        .unwrap();
+                    param.insert("admin".to_string(), addr.lower_hex());
                     let contract = Account {
                         nonce: U256::from(1),
                         code: "".to_string(),
@@ -149,10 +155,11 @@ impl<'a> GenesisCreator<'a> {
                     self.accounts.insert((*address).clone(), contract);
                 } else if *contract_name == "PriceManager" {
                     let mut param = BTreeMap::new();
-                    let quota_price = match params.get(0) {
-                        Some(Token::Uint(price)) => price,
-                        _ => unimplemented!(),
-                    };
+                    // let quota_price = match params.get(0) {
+                    //     Some(Token::Uint(price)) => price,
+                    //     _ => unimplemented!(),
+                    // };
+                    let quota_price = params.get(0).map(|s| s.clone().to_uint()).unwrap().unwrap();
                     param.insert("quota_price".to_string(), quota_price.to_string());
                     let price_contract = Account {
                         nonce: U256::from(1),
@@ -163,10 +170,11 @@ impl<'a> GenesisCreator<'a> {
                     self.accounts.insert((*address).clone(), price_contract);
                 } else if *contract_name == "VersionManager" {
                     let mut param = BTreeMap::new();
-                    let version = match params.get(0) {
-                        Some(Token::Uint(v)) => v,
-                        _ => unimplemented!(),
-                    };
+                    // let version = match params.get(0) {
+                    //     Some(Token::Uint(v)) => v,
+                    //     _ => unimplemented!(),
+                    // };
+                    let version = params.get(0).map(|s| s.clone().to_uint()).unwrap().unwrap();
                     param.insert("version".to_string(), version.to_string());
                     let contract = Account {
                         nonce: U256::from(1),
@@ -177,11 +185,16 @@ impl<'a> GenesisCreator<'a> {
                     self.accounts.insert((*address).clone(), contract);
                 } else if *contract_name == "Authorization" {
                     let mut param = BTreeMap::new();
-                    let addr = match params.get(0) {
-                        Some(Token::Address(addr)) => addr,
-                        _ => unimplemented!(),
-                    };
-                    param.insert("admin".to_string(), addr.hex());
+                    // let addr = match params.get(0) {
+                    //     Some(Token::Address(addr)) => addr,
+                    //     _ => unimplemented!(),
+                    // };
+                    let addr = params
+                        .get(0)
+                        .map(|s| s.clone().to_address())
+                        .unwrap()
+                        .unwrap();
+                    param.insert("admin".to_string(), addr.lower_hex());
                     let admin_contract = Account {
                         nonce: U256::from(1),
                         code: "".to_string(),
@@ -210,7 +223,7 @@ impl<'a> GenesisCreator<'a> {
 
                             let mut param = BTreeMap::new();
                             for i in 0..nodes.len() {
-                                param.insert(nodes[i].hex(), stakes[i].to_hex());
+                                param.insert(nodes[i].lower_hex(), stakes[i].lower_hex());
                             }
 
                             let contract = Account {
@@ -240,10 +253,10 @@ impl<'a> GenesisCreator<'a> {
                                 })
                                 .collect::<Vec<Address>>();
                             let mut param = BTreeMap::new();
-                            param.insert("parent".to_string(), parent.hex());
+                            param.insert("parent".to_string(), parent.lower_hex());
                             param.insert("name".to_string(), name.to_string());
                             for i in 0..accounts.len() {
-                                param.insert("accounts".to_string(), accounts[i].hex());
+                                param.insert("accounts".to_string(), accounts[i].lower_hex());
                             }
 
                             let contract = Account {
@@ -258,50 +271,100 @@ impl<'a> GenesisCreator<'a> {
                     }
                 } else if *contract_name == "SysConfig" {
                     let mut param = BTreeMap::new();
-                    let delay_block_number = match params.get(0) {
-                        Some(Token::Uint(s)) => s,
-                        _ => unimplemented!(),
-                    };
-                    let chain_owner = match params.get(1) {
-                        Some(Token::Address(s)) => s,
-                        _ => unimplemented!(),
-                    };
-                    let chain_name = match params.get(2) {
-                        Some(Token::String(s)) => s,
-                        _ => unimplemented!(),
-                    };
-                    let chain_id = match params.get(3) {
-                        Some(Token::Uint(s)) => s,
-                        _ => unimplemented!(),
-                    };
-                    let operator = match params.get(4) {
-                        Some(Token::String(s)) => s,
-                        _ => unimplemented!(),
-                    };
-                    let website = match params.get(5) {
-                        Some(Token::String(s)) => s,
-                        _ => unimplemented!(),
-                    };
-                    let block_interval = match params.get(6) {
-                        Some(Token::Uint(s)) => s,
-                        _ => unimplemented!(),
-                    };
-                    let economical_model = match params.get(7) {
-                        Some(Token::Uint(s)) => s,
-                        _ => unimplemented!(),
-                    };
-                    let name = match params.get(8) {
-                        Some(Token::String(s)) => s,
-                        _ => unimplemented!(),
-                    };
-                    let symbol = match params.get(9) {
-                        Some(Token::String(s)) => s,
-                        _ => unimplemented!(),
-                    };
-                    let avatar = match params.get(10) {
-                        Some(Token::String(s)) => s,
-                        _ => unimplemented!(),
-                    };
+                    // let delay_block_number = match params.get(0) {
+                    //     Some(Token::Uint(s)) => s,
+                    //     _ => unimplemented!(),
+                    // };
+                    let delay_block_number =
+                        params.get(0).map(|s| s.clone().to_uint()).unwrap().unwrap();
+
+                    // let chain_owner = match params.get(1) {
+                    //     Some(Token::Address(s)) => s,
+                    //     _ => unimplemented!(),
+                    // };
+                    let chain_owner = params
+                        .get(1)
+                        .map(|s| s.clone().to_address())
+                        .unwrap()
+                        .unwrap();
+
+                    // let chain_name = match params.get(2) {
+                    //     Some(Token::String(s)) => s,
+                    //     _ => unimplemented!(),
+                    // };
+                    let chain_name = params
+                        .get(2)
+                        .map(|s| s.clone().to_string())
+                        .unwrap()
+                        .unwrap();
+
+                    // let chain_id = match params.get(3) {
+                    //     Some(Token::Uint(s)) => s,
+                    //     _ => unimplemented!(),
+                    // };
+                    let chain_id = params.get(3).map(|s| s.clone().to_uint()).unwrap().unwrap();
+
+                    // let operator = match params.get(4) {
+                    //     Some(Token::String(s)) => s,
+                    //     _ => unimplemented!(),
+                    // };
+                    let operator = params.get(4).map(|s| s.to_string()).unwrap();
+
+                    // let website = match params.get(5) {
+                    //     Some(Token::String(s)) => s,
+                    //     _ => unimplemented!(),
+                    // };
+
+                    let website = params
+                        .get(5)
+                        .map(|s| s.clone().to_string())
+                        .unwrap()
+                        .unwrap();
+
+                    // let block_interval = match params.get(6) {
+                    //     Some(Token::Uint(s)) => s,
+                    //     _ => unimplemented!(),
+                    // };
+                    let block_interval =
+                        params.get(6).map(|s| s.clone().to_uint()).unwrap().unwrap();
+
+                    // let economical_model = match params.get(7) {
+                    //     Some(Token::Uint(s)) => s,
+                    //     _ => unimplemented!(),
+                    // };
+                    let economical_model =
+                        params.get(7).map(|s| s.clone().to_uint()).unwrap().unwrap();
+
+                    // let name = match params.get(8) {
+                    //     Some(Token::String(s)) => s,
+                    //     _ => unimplemented!(),
+                    // };
+                    let name = params
+                        .get(8)
+                        .map(|s| s.clone().to_string())
+                        .unwrap()
+                        .unwrap();
+
+                    // let symbol = match params.get(9) {
+                    //     Some(Token::String(s)) => s,
+                    //     _ => unimplemented!(),
+                    // };
+                    let symbol = params
+                        .get(9)
+                        .map(|s| s.clone().to_string())
+                        .unwrap()
+                        .unwrap();
+
+                    // let avatar = match params.get(10) {
+                    //     Some(Token::String(s)) => s,
+                    //     _ => unimplemented!(),
+                    // };
+                    let avatar = params
+                        .get(10)
+                        .map(|s| s.clone().to_string())
+                        .unwrap()
+                        .unwrap();
+
                     let flags = match params.get(11) {
                         Some(Token::Array(s)) => s
                             .iter()
@@ -315,15 +378,15 @@ impl<'a> GenesisCreator<'a> {
 
                     param.insert(
                         "delay_block_number".to_string(),
-                        delay_block_number.to_hex(),
+                        delay_block_number.lower_hex(),
                     );
-                    param.insert("chain_owner".to_string(), chain_owner.hex());
+                    param.insert("chain_owner".to_string(), chain_owner.lower_hex());
                     param.insert("chain_name".to_string(), chain_name.to_string());
-                    param.insert("chain_id".to_string(), chain_id.to_hex());
+                    param.insert("chain_id".to_string(), chain_id.lower_hex());
                     param.insert("operator".to_string(), operator.to_string());
                     param.insert("website".to_string(), website.to_string());
-                    param.insert("block_interval".to_string(), block_interval.to_hex());
-                    param.insert("economical_model".to_string(), economical_model.to_hex());
+                    param.insert("block_interval".to_string(), block_interval.lower_hex());
+                    param.insert("economical_model".to_string(), economical_model.lower_hex());
                     param.insert("name".to_string(), name.to_string());
                     param.insert("symbol".to_string(), symbol.to_string());
                     param.insert("avatar".to_string(), avatar.to_string());

@@ -14,7 +14,7 @@ use crate::rs_contracts::contracts::auto_exec::AutoContract;
 use crate::rs_contracts::contracts::batch_tx::BatchTx;
 use crate::rs_contracts::contracts::contract::Contract;
 use crate::rs_contracts::contracts::emergency_intervention::EmergContract;
-use crate::rs_contracts::contracts::group_manager::GroupStore;
+use crate::rs_contracts::contracts::group::group_manager::GroupStore;
 use crate::rs_contracts::contracts::node_manager::NodeStore;
 use crate::rs_contracts::contracts::perm_manager::PermStore;
 use crate::rs_contracts::contracts::price::PriceContract;

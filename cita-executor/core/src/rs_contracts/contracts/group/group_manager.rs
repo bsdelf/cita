@@ -1,4 +1,4 @@
-use super::utils::{clean_0x, extract_to_u32, get_latest_key};
+use crate::rs_contracts::contracts::utils::{clean_0x, extract_to_u32, get_latest_key};
 
 use cita_types::traits::LowerHex;
 use cita_types::{Address, H256, U256};
@@ -6,8 +6,8 @@ use cita_vm::evm::{InterpreterParams, InterpreterResult, Log};
 use common_types::context::Context;
 use common_types::errors::ContractError;
 
-use super::contract::Contract;
 use crate::rs_contracts::contracts::group::Group;
+use crate::rs_contracts::contracts::Contract;
 use crate::rs_contracts::storage::db_contracts::ContractsDB;
 use crate::rs_contracts::storage::db_trait::DataBase;
 use crate::rs_contracts::storage::db_trait::DataCategory;

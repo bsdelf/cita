@@ -7,8 +7,6 @@ pub mod admin;
 pub mod auto_exec;
 pub mod batch_tx;
 pub mod emergency_intervention;
-pub mod group;
-pub mod group_manager;
 pub mod node_manager;
 pub mod perm;
 pub mod perm_manager;
@@ -16,6 +14,9 @@ pub mod price;
 pub mod quota_manager;
 pub mod sys_config;
 pub mod version;
+
+pub mod group;
+pub mod role;
 
 pub use admin::Admin;
 pub use contract::Contract;

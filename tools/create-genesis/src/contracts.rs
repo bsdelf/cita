@@ -19,7 +19,6 @@ use std::str::FromStr;
 use cita_types::{clean_0x, Address};
 use ethabi::Token;
 use serde::{Deserialize, Serialize};
-use tiny_keccak::keccak256;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContractsData {

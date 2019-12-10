@@ -8,7 +8,7 @@ use common_types::errors::ContractError;
 
 use super::contract::Contract;
 use crate::rs_contracts::contracts::build_in_perm;
-use crate::rs_contracts::contracts::group_manager::GroupStore;
+use crate::rs_contracts::contracts::group::group_manager::GroupStore;
 use crate::rs_contracts::contracts::perm::Permission;
 use crate::rs_contracts::storage::db_contracts::ContractsDB;
 use crate::rs_contracts::storage::db_trait::DataBase;

@@ -449,9 +449,9 @@ workflows:
       # - "Test Snapshot Taking And Restoring":
       #     requires:
       #       - "Release"
-      - "Test Amend":
-          requires:
-            - "Release"
+      # - "Test Amend":
+      #     requires:
+      #       - "Release"
       - "Test Executor Process Invalid Proof":
           requires:
             - "Release"
@@ -495,7 +495,7 @@ workflows:
               - "JSON-RPC Mock Test in Quota Mode"
               - "Test Transfer Value in Charge Mode"
               - "Test System Features"
-              - "Test Amend"
+              # - "Test Amend"
               - "Test Executor Process Invalid Proof"
               - "Discovery Test for network"
               - "Byzantine Test in Quota Mode"
