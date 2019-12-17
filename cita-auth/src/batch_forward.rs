@@ -15,18 +15,15 @@
 use libproto::router::{MsgType, RoutingKey, SubModules};
 use libproto::TryInto;
 use libproto::{BatchRequest, Message, Request};
-use pubsub::channel::{Receiver, Sender};
+use pubsub::channel::{Receiver, RecvTimeoutError, Sender};
 use std::convert::Into;
-use std::thread;
 use std::time::Duration;
-use util::instrument::{unix_now, AsMillis};
+use util::instrument::unix_now;
 use uuid::Uuid;
 
 pub struct BatchForward {
     batch_size: usize,
     timeout: u64,
-    check_duration: u32,
-    last_timestamp: u64,
     request_buffer: Vec<Request>,
     rx_request: Receiver<Request>,
     tx_pub: Sender<(String, Vec<u8>)>,
@@ -42,8 +39,6 @@ impl BatchForward {
         BatchForward {
             batch_size,
             timeout,
-            check_duration: 5,
-            last_timestamp: AsMillis::as_millis(&unix_now()),
             request_buffer: Vec::new(),
             rx_request,
             tx_pub,
@@ -51,21 +46,43 @@ impl BatchForward {
     }
 
     pub fn run(&mut self) {
+        let mut deadline = unix_now();
         loop {
-            if let Ok(tx_req) = self.rx_request.try_recv() {
-                self.request_buffer.push(tx_req);
-                if self.request_buffer.len() > self.batch_size {
-                    self.batch_forward();
+            if self.request_buffer.is_empty() {
+                if let Ok(tx_req) = self.rx_request.recv() {
+                    deadline = unix_now()
+                        .checked_add(Duration::from_millis(self.timeout))
+                        .unwrap();
+                    self.request_buffer.push(tx_req);
+                    self.try_batch_forward();
                 }
             } else {
-                thread::sleep(Duration::new(0, self.check_duration * 1_000_000));
-                let now = AsMillis::as_millis(&unix_now());
-                if now.saturating_sub(self.last_timestamp) > self.timeout
-                    && !self.request_buffer.is_empty()
-                {
+                let now = unix_now();
+                if now >= deadline {
                     self.batch_forward();
+                } else {
+                    let timeout = deadline.checked_sub(now).unwrap();
+                    let result = self.rx_request.recv_timeout(timeout);
+                    match result {
+                        Ok(tx_req) => {
+                            self.request_buffer.push(tx_req);
+                            self.try_batch_forward();
+                        }
+                        Err(err) => match err {
+                            RecvTimeoutError::Timeout => {
+                                self.batch_forward();
+                            }
+                            _ => (),
+                        },
+                    }
                 }
             }
+        }
+    }
+
+    fn try_batch_forward(&mut self) {
+        if self.request_buffer.len() > self.batch_size {
+            self.batch_forward();
         }
     }
 
@@ -90,7 +107,6 @@ impl BatchForward {
             ))
             .unwrap();
 
-        self.last_timestamp = AsMillis::as_millis(&unix_now());
         self.request_buffer.clear();
     }
 }
