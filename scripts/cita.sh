@@ -26,7 +26,7 @@ sudo() {
     if [ "$(whoami)" == "root" ]; then
         "$@"
     else
-        /usr/bin/sudo "$@"
+        "$@"
     fi
     set +o noglob
 }

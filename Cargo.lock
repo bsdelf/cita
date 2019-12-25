@@ -1839,7 +1839,7 @@ dependencies = [
 
 [[package]]
 name = "librocksdb-sys"
-version = "6.1.2"
+version = "6.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bindgen 0.49.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2735,7 +2735,7 @@ version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "libc 0.2.46 (registry+https://github.com/rust-lang/crates.io-index)",
- "librocksdb-sys 6.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "librocksdb-sys 6.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -3945,7 +3945,7 @@ dependencies = [
 "checksum libgit2-sys 0.7.10 (registry+https://github.com/rust-lang/crates.io-index)" = "4916b5addc78ec36cc309acfcdf0b9f9d97ab7b84083118b248709c5b7029356"
 "checksum libloading 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "9c3ad660d7cb8c5822cd83d10897b0f1f1526792737a179e73896152f85b88c2"
 "checksum libproto 0.6.0 (git+https://github.com/citahub/cita-common.git?branch=develop)" = "<none>"
-"checksum librocksdb-sys 6.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "a6af56e6599bce586321e8ba8acf8a0a5e97431fd9ab49f9b69f92d93fe642c6"
+"checksum librocksdb-sys 6.2.4 (registry+https://github.com/rust-lang/crates.io-index)" = "0a0785e816e1e11e7599388a492c61ef80ddc2afc91e313e61662cce537809be"
 "checksum libsecp256k1 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "688e8d65e495567c2c35ea0001b26b9debf0b4ea11f8cccc954233b75fc3428a"
 "checksum libsm 0.3.0 (git+https://github.com/citahub/libsm?rev=4d0e6199fca0934c58131de1d0036e9aa4da26c1)" = "<none>"
 "checksum libsodium-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "de29595a79ddae2612ad0f27793a0b86cdf05a12f94ad5b87674540cc568171e"
